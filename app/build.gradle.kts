@@ -31,11 +31,16 @@ dependencies {
     // bluetooth dependency
     implementation("com.polidea.rxandroidble2:rxandroidble:1.10.0")
 
+    //RxJava 2
+    implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
+    implementation("io.reactivex.rxjava2:rxjava:2.2.8")
+
     // movisens libraries
     implementation("com.github.movisens:SmartGattLib:3.0.7")
     implementation("com.github.movisens:MovisensGattLib:2.1.7")
 
     // architecture components
+    implementation("androidx.lifecycle:lifecycle-extensions:2.0.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.0.0")
 
     // test dependencies
