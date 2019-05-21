@@ -25,13 +25,18 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:${Versions.kotlinVersion}")
+
     implementation("androidx.appcompat:appcompat:${Versions.androidxVersion}")
     implementation("androidx.core:core-ktx:${Versions.androidxVersion}")
+    implementation("androidx.recyclerview:recyclerview:1.1.0-alpha05")
+    implementation("androidx.constraintlayout:constraintlayout:1.1.3")
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("com.google.android.material:material:1.1.0-alpha06")
 
     // bluetooth dependency
     implementation("com.polidea.rxandroidble2:rxandroidble:1.10.0")
 
-    //RxJava 2
+    // RxJava 2
     implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
     implementation("io.reactivex.rxjava2:rxjava:2.2.8")
 
