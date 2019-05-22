@@ -1,11 +1,18 @@
 package com.movisens.rxblemovisenssample.scan
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.BLUETOOTH
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.MultiplePermissionsReport
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import com.movisens.rxblemovisenssample.R
 import com.movisens.rxblemovisenssample.model.MovisensDevice
 import io.reactivex.disposables.Disposable
@@ -30,8 +37,27 @@ class ScanActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        scanDisposable = scanViewModel.getMovisensDevices()
-            .subscribe({ device -> showDevice(device) }, { throwable -> showError(throwable) })
+        Dexter.withActivity(this)
+            .withPermissions(listOf(ACCESS_COARSE_LOCATION, BLUETOOTH))
+            .withListener(object : MultiplePermissionsListener {
+                override fun onPermissionsChecked(report: MultiplePermissionsReport) {
+                    if (report.areAllPermissionsGranted()) {
+                        scanDisposable = scanViewModel.getMovisensDevices()
+                            .subscribe(this@ScanActivity::showDevice, this@ScanActivity::showError)
+                    } else {
+                        // handle denied permissions with DialogOnAnyDeniedMultiplePermissionsListener
+                    }
+                }
+
+                override fun onPermissionRationaleShouldBeShown(
+                    permissions: MutableList<PermissionRequest>,
+                    token: PermissionToken
+                ) {
+                    // handle rationale correctly like described here https://developer.android.com/training/permissions/requesting#explain
+                    token.continuePermissionRequest()
+                }
+            })
+
     }
 
     private fun showError(throwable: Throwable) {
