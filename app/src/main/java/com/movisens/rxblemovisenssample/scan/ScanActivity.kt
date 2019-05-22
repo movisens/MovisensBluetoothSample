@@ -24,7 +24,10 @@ import kotlinx.android.synthetic.main.activity_scan.*
 
 
 class ScanActivity : AppCompatActivity() {
-    private val REQUEST_ENABLE_BT: Int = 1
+    companion object {
+        const val REQUEST_ENABLE_BT: Int = 1
+    }
+
     lateinit var scanViewModel: ScanViewModel
     lateinit var scanDisposable: Disposable
     lateinit var adapter: ScanRecyclerViewAdapter

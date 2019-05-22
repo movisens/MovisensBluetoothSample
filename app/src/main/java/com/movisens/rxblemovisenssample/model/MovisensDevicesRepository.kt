@@ -9,9 +9,13 @@ import com.polidea.rxandroidble2.scan.ScanSettings.CALLBACK_TYPE_ALL_MATCHES
 import com.polidea.rxandroidble2.scan.ScanSettings.SCAN_MODE_LOW_LATENCY
 import io.reactivex.Observable
 
-class MovisensDevicesRepository(val application: Application) {
+class MovisensDevicesRepository(application: Application) {
+
+    companion object {
+        const val MIN_RSSI = -90
+    }
+
     private val rxBleClient: RxBleClient = RxBleClient.create(application)
-    private val MIN_RSSI = -90
 
 
     fun getAllMovisensDevices(): Observable<MovisensDevice> {
