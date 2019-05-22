@@ -1,7 +1,9 @@
 package com.movisens.rxblemovisenssample.scan
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
-import android.Manifest.permission.BLUETOOTH
+import android.app.Activity
+import android.bluetooth.BluetoothAdapter
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -9,16 +11,20 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.karumi.dexter.Dexter
-import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionDeniedResponse
+import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener
-import com.movisens.rxblemovisenssample.R
+import com.karumi.dexter.listener.single.BasePermissionListener
 import com.movisens.rxblemovisenssample.model.MovisensDevice
+import com.polidea.rxandroidble2.exceptions.BleScanException
+import com.polidea.rxandroidble2.exceptions.BleScanException.BLUETOOTH_DISABLED
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_scan.*
 
+
 class ScanActivity : AppCompatActivity() {
+    private val REQUEST_ENABLE_BT: Int = 1
     lateinit var scanViewModel: ScanViewModel
     lateinit var scanDisposable: Disposable
     lateinit var adapter: ScanRecyclerViewAdapter
@@ -27,7 +33,7 @@ class ScanActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         scanViewModel = ViewModelProviders.of(this).get(ScanViewModel::class.java)
-        setContentView(R.layout.activity_scan)
+        setContentView(com.movisens.rxblemovisenssample.R.layout.activity_scan)
         adapter = ScanRecyclerViewAdapter {
             Log.e("TEST", it.toString())
         }
@@ -38,31 +44,43 @@ class ScanActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         Dexter.withActivity(this)
-            .withPermissions(listOf(ACCESS_COARSE_LOCATION, BLUETOOTH))
-            .withListener(object : MultiplePermissionsListener {
-                override fun onPermissionsChecked(report: MultiplePermissionsReport) {
-                    if (report.areAllPermissionsGranted()) {
-                        scanDisposable = scanViewModel.getMovisensDevices()
-                            .subscribe(this@ScanActivity::showDevice, this@ScanActivity::showError)
-                    } else {
-                        // handle denied permissions with DialogOnAnyDeniedMultiplePermissionsListener
-                    }
+            .withPermission(ACCESS_COARSE_LOCATION)
+            .withListener(object : BasePermissionListener() {
+                override fun onPermissionRationaleShouldBeShown(
+                    permission: PermissionRequest?,
+                    token: PermissionToken?
+                ) {
+                    super.onPermissionRationaleShouldBeShown(permission, token)
+                    // handle rationale correctly like described here https://developer.android.com/training/permissions/requesting#explain
                 }
 
-                override fun onPermissionRationaleShouldBeShown(
-                    permissions: MutableList<PermissionRequest>,
-                    token: PermissionToken
-                ) {
-                    // handle rationale correctly like described here https://developer.android.com/training/permissions/requesting#explain
-                    token.continuePermissionRequest()
+                override fun onPermissionGranted(response: PermissionGrantedResponse?) {
+                    super.onPermissionGranted(response)
+                    scanDisposable = scanViewModel.getMovisensDevices()
+                        .subscribe(this@ScanActivity::showDevice, this@ScanActivity::showError)
+                }
+
+                override fun onPermissionDenied(response: PermissionDeniedResponse?) {
+                    super.onPermissionDenied(response)
+                    // handle denied permissions with DialogOnAnyDeniedMultiplePermissionsListener
                 }
             })
+            .check()
 
     }
 
     private fun showError(throwable: Throwable) {
-        throwable.printStackTrace()
-        Snackbar.make(activity_scan_root, throwable.localizedMessage, Snackbar.LENGTH_LONG).show()
+        if (throwable is BleScanException) {
+            if (throwable.reason == BLUETOOTH_DISABLED) {
+                Snackbar.make(activity_scan_root, "Bluetooth disabled! Please enable it.", Snackbar.LENGTH_INDEFINITE)
+                    .setAction("enable") {
+                        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                        startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+                    }.show()
+            }
+        } else {
+            Snackbar.make(activity_scan_root, throwable.localizedMessage, Snackbar.LENGTH_LONG).show()
+        }
     }
 
     private fun showDevice(device: MovisensDevice) {
@@ -71,6 +89,16 @@ class ScanActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        scanDisposable.dispose()
+        if (::scanDisposable.isInitialized)
+            scanDisposable.dispose()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
+            scanDisposable.dispose()
+            scanDisposable = scanViewModel.getMovisensDevices()
+                .subscribe(this@ScanActivity::showDevice, this@ScanActivity::showError)
+        }
     }
 }
