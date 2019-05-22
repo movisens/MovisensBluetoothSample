@@ -71,6 +71,9 @@ class ScanActivity : AppCompatActivity() {
 
     private fun showError(throwable: Throwable) {
         if (throwable is BleScanException) {
+            // on first step ask for consent of the user to activate bluetooth.
+            // You can add bluetooth admin permission, to activate it by yourself.
+            // https://developer.android.com/reference/android/bluetooth/BluetoothAdapter.html#enable()
             if (throwable.reason == BLUETOOTH_DISABLED) {
                 Snackbar.make(activity_scan_root, "Bluetooth disabled! Please enable it.", Snackbar.LENGTH_INDEFINITE)
                     .setAction("enable") {
