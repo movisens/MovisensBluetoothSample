@@ -5,22 +5,21 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.movisens.rxblemovisenssample.R
-import com.movisens.rxblemovisenssample.model.MovisensDevice
 import kotlinx.android.synthetic.main.card_ble_device.view.*
 
 /**
  * Created by Robert Zetzsche on 21.05.2019.
  */
-class ScanRecyclerViewAdapter(private val itemClick: (MovisensDevice) -> Unit) :
+class ScanRecyclerViewAdapter(private val itemClick: (ScanViewModel.MovisensDevice) -> Unit) :
     RecyclerView.Adapter<ScanResultViewHolder>() {
 
-    var movisensDeviceList: ArrayList<MovisensDevice> = arrayListOf()
+    var movisensDeviceList: ArrayList<ScanViewModel.MovisensDevice> = arrayListOf()
         set(value) {
             field = value
             notifyDataSetChanged()
         }
 
-    fun addDevice(device: MovisensDevice) {
+    fun addDevice(device: ScanViewModel.MovisensDevice) {
         for (movisensDevice in movisensDeviceList) {
             if (movisensDevice.mac == device.mac) {
                 val index = movisensDeviceList.indexOf(movisensDevice)

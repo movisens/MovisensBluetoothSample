@@ -5,7 +5,6 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,7 +15,7 @@ import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.BasePermissionListener
-import com.movisens.rxblemovisenssample.model.MovisensDevice
+import com.movisens.rxblemovisenssample.connect.ConnectActivity
 import com.polidea.rxandroidble2.exceptions.BleScanException
 import com.polidea.rxandroidble2.exceptions.BleScanException.BLUETOOTH_DISABLED
 import io.reactivex.disposables.Disposable
@@ -38,7 +37,10 @@ class ScanActivity : AppCompatActivity() {
         scanViewModel = ViewModelProviders.of(this).get(ScanViewModel::class.java)
         setContentView(com.movisens.rxblemovisenssample.R.layout.activity_scan)
         adapter = ScanRecyclerViewAdapter {
-            Log.e("TEST", it.toString())
+            val intent = Intent(this, ConnectActivity::class.java)
+            intent.putExtra("MAC", it.mac)
+            intent.putExtra("NAME", it.name)
+            startActivity(intent)
         }
         devices_recyclerview.layoutManager = LinearLayoutManager(this)
         devices_recyclerview.adapter = adapter
@@ -89,7 +91,7 @@ class ScanActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDevice(device: MovisensDevice) {
+    private fun showDevice(device: ScanViewModel.MovisensDevice) {
         adapter.addDevice(device)
     }
 
