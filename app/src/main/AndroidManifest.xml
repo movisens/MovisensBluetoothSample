@@ -21,5 +21,12 @@
             </intent-filter>
         </activity>
         <activity android:name="com.movisens.rxblemovisenssample.feature.scan.connect.ConnectActivity"/>
+        <activity android:name="com.movisens.rxblemovisenssample.feature.connect.ConnectActivity"/>
+        <service android:name=".bluetooth.BluetoothService"/>
+        <receiver android:name=".receiver.OnBootCompleteReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
