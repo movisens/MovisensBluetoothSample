@@ -20,7 +20,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name="com.movisens.rxblemovisenssample.feature.scan.connect.ConnectActivity"/>
         <activity android:name="com.movisens.rxblemovisenssample.feature.connect.ConnectActivity"/>
         <service android:name=".bluetooth.BluetoothService"/>
         <receiver android:name=".receiver.OnBootCompleteReceiver">

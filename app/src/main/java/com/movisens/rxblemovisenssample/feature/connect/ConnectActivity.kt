@@ -1,4 +1,4 @@
-package com.movisens.rxblemovisenssample.feature.scan.connect
+package com.movisens.rxblemovisenssample.feature.connect
 
 import android.content.DialogInterface
 import android.os.Bundle
