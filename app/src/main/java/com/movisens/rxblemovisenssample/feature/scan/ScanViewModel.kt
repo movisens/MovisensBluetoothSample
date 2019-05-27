@@ -1,4 +1,4 @@
-package com.movisens.rxblemovisenssample.scan
+package com.movisens.rxblemovisenssample.feature.scan
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel

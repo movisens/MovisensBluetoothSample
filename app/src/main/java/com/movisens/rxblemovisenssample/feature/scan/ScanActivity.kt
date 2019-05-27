@@ -1,4 +1,4 @@
-package com.movisens.rxblemovisenssample.scan
+package com.movisens.rxblemovisenssample.feature.scan
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.app.Activity
@@ -15,7 +15,7 @@ import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.BasePermissionListener
-import com.movisens.rxblemovisenssample.connect.ConnectActivity
+import com.movisens.rxblemovisenssample.feature.scan.connect.ConnectActivity
 import com.polidea.rxandroidble2.exceptions.BleScanException
 import com.polidea.rxandroidble2.exceptions.BleScanException.BLUETOOTH_DISABLED
 import io.reactivex.disposables.Disposable
