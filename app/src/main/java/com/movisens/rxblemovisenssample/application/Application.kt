@@ -1,6 +1,11 @@
 package com.movisens.rxblemovisenssample.application
 
 import android.app.Application
+import android.content.Intent
+import android.os.Build
+import android.os.Build.VERSION.SDK_INT
+import android.preference.PreferenceManager
+import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
 import com.polidea.rxandroidble2.exceptions.BleException
 import io.reactivex.exceptions.UndeliverableException
 import io.reactivex.plugins.RxJavaPlugins
@@ -22,5 +27,19 @@ class Application : Application() {
                 throw Exception(error)
             }
         }
+
+        if (isSamplingRunning()) {
+            val intent = Intent(this, BluetoothService::class.java)
+            if (SDK_INT > Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startActivity(intent)
+            }
+        }
+    }
+
+    fun isSamplingRunning(): Boolean {
+        val preference = PreferenceManager.getDefaultSharedPreferences(this)
+        return preference.getBoolean("SAMPLING_RUNNING", false)
     }
 }

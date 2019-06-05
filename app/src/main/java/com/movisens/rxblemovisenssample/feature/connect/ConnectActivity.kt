@@ -1,12 +1,23 @@
 package com.movisens.rxblemovisenssample.feature.connect
 
+import android.app.Service
+import android.content.ComponentName
 import android.content.DialogInterface
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.os.IBinder
+import android.preference.PreferenceManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.snackbar.Snackbar
 import com.movisens.rxblemovisenssample.R.layout
+import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
+import com.movisens.rxblemovisenssample.bluetooth.binder.IBluetoothBinder
 import com.movisens.rxblemovisenssample.ui.GenericDialogFragment
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -15,16 +26,18 @@ import kotlinx.android.synthetic.main.activity_connect.*
 /**
  * Created by Robert Zetzsche on 22.05.2019.
  */
-class ConnectActivity : AppCompatActivity() {
-
+class ConnectActivity : AppCompatActivity(), ServiceConnection {
     private lateinit var connectViewModel: ConnectViewModel
     private lateinit var checkStateDisposable: Disposable
     private lateinit var movementAccelerationDisposable: Disposable
     private lateinit var deleteDisposable: Disposable
     private lateinit var stopAndDeleteDisposable: Disposable
+    private lateinit var binderI: IBluetoothBinder
 
     private lateinit var mac: String
     private lateinit var name: String
+
+    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,14 +66,25 @@ class ConnectActivity : AppCompatActivity() {
                 }, ::showError)
         }
 
-
+        val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
+        activate_mov_acc.text = if (samplingRunning) "Stop Measurement" else "Activate Movement Acceleration"
         activate_mov_acc.setOnClickListener {
-            if (::movementAccelerationDisposable.isInitialized && !movementAccelerationDisposable.isDisposed) {
-                movementAccelerationDisposable.dispose()
+            if (sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
+                val intent = Intent(this, BluetoothService::class.java)
+                if (SDK_INT > Build.VERSION_CODES.O) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+                bindService(intent, this, Service.BIND_ABOVE_CLIENT)
+                sharedPreferences.edit {
+                    putBoolean("SAMPLING_RUNNING", true)
+                }
+                activate_mov_acc.text = "Stop Measurement"
             } else {
-                movementAccelerationDisposable = connectViewModel
-                    .startMeasurementAndActivateMovementAcceleration(mac)
-                    .subscribe(::showMovementValues, ::showError)
+                binderI.stopSensor()
+                activate_mov_acc.isEnabled = false
+                activate_mov_acc.text = "Activate Movement Acceleration"
             }
         }
     }
@@ -135,9 +159,25 @@ class ConnectActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
+            bindService(Intent(this, BluetoothService::class.java), this, Service.BIND_ADJUST_WITH_ACTIVITY)
+        }
     }
 
     override fun onPause() {
         super.onPause()
+        unbindService(this)
+    }
+
+    override fun onServiceDisconnected(componentName: ComponentName) {
+        if (::movementAccelerationDisposable.isInitialized)
+            movementAccelerationDisposable.dispose()
+    }
+
+    override fun onServiceConnected(componentName: ComponentName, binder: IBinder) {
+        this.binderI = binder as IBluetoothBinder
+        movementAccelerationDisposable = binder.getMovementAccObservable()
+            .subscribe(this::showMovementValues, this::showError)
+
     }
 }
