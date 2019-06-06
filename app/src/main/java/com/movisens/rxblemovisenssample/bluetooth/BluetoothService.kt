@@ -1,10 +1,15 @@
 package com.movisens.rxblemovisenssample.bluetooth
 
-import android.app.*
+import android.app.AlarmManager
+import android.app.Notification
+import android.app.PendingIntent
 import android.app.PendingIntent.*
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.movisens.rxblemovisenssample.bluetooth.binder.BluetoothBinder
 import com.movisens.rxblemovisenssample.exceptions.ReconnectException
 import com.movisens.rxblemovisenssample.exceptions.UnrecoverableException
@@ -25,13 +30,17 @@ class BluetoothService : Service() {
     private lateinit var errorDisposable: Disposable
     private lateinit var bluetoothServiceController: BluetoothServiceController
     private lateinit var movementAccelerationDisposable: Disposable
+    private lateinit var alarmManager: AlarmManager
+
     private val subject: Subject<Boolean> = PublishSubject.create()
-    private val alarmManager: AlarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val bluetoothBinder = BluetoothBinder()
 
     companion object {
         const val COMMAND = "COMMAND"
         const val COMMAND_RECONNECT = "COMMAND_RECONNECT"
+        const val COMMAND_START = "COMMAND_START"
+        const val COMMAND_STOP = "COMMAND_STOP"
+
         const val SENSOR_MAC = "SENSOR_MAC"
     }
 
@@ -39,12 +48,17 @@ class BluetoothService : Service() {
         return bluetoothBinder
     }
 
+    override fun onCreate() {
+        alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        super.onCreate()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent != null && intent.hasExtra(SENSOR_MAC) && intent.hasExtra(COMMAND)) {
             val command: String = intent.getStringExtra(COMMAND)
             val mac: String = intent.getStringExtra(SENSOR_MAC)
             when (command) {
-                "START_COMMAND" -> {
+                COMMAND_START -> {
                     if (intent.hasExtra(SENSOR_MAC)) {
                         showForegroundNotification()
                         bluetoothServiceController =
@@ -54,19 +68,21 @@ class BluetoothService : Service() {
                         errorDisposable = bluetoothServiceController.errorSubject.subscribe { handleErrors(it, mac) }
                     }
                 }
-                "STOP_COMMAND" -> {
+                COMMAND_STOP -> {
                     bluetoothServiceController.stopSensor().subscribe()
                 }
-                "RECONNECT" -> {
+                COMMAND_RECONNECT -> {
                     subject.onNext(true)
                 }
             }
-        }
+        } else
+            stopSelf()
         return super.onStartCommand(intent, flags, startId)
     }
 
     private fun handleUpdates(movementAccelerationBuffered: Double) {
         //update notification
+        Log.e("TEST", movementAccelerationBuffered.toString())
         bluetoothBinder.pushMovementValue(movementAccelerationBuffered)
     }
 

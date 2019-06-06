@@ -1,15 +1,13 @@
 package com.movisens.rxblemovisenssample.feature.connect
 
 import android.app.Service
-import android.content.ComponentName
-import android.content.DialogInterface
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.os.IBinder
 import android.preference.PreferenceManager
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
@@ -17,6 +15,9 @@ import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.snackbar.Snackbar
 import com.movisens.rxblemovisenssample.R.layout
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
+import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND
+import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND_START
+import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.SENSOR_MAC
 import com.movisens.rxblemovisenssample.bluetooth.binder.IBluetoothBinder
 import com.movisens.rxblemovisenssample.ui.GenericDialogFragment
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -38,11 +39,12 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     private lateinit var mac: String
     private lateinit var name: String
 
-    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(layout.activity_connect)
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         mac = intent?.extras?.getString("MAC") ?: ""
         name = intent?.extras?.getString("NAME") ?: ""
@@ -70,8 +72,10 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
         activate_mov_acc.text = if (samplingRunning) "Stop Measurement" else "Activate Movement Acceleration"
         activate_mov_acc.setOnClickListener {
-            if (sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
+            if (!sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
                 val intent = Intent(this, BluetoothService::class.java)
+                intent.putExtra(COMMAND, COMMAND_START)
+                intent.putExtra(SENSOR_MAC, mac)
                 if (SDK_INT > Build.VERSION_CODES.O) {
                     startForegroundService(intent)
                 } else {
@@ -83,9 +87,13 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
                 }
                 activate_mov_acc.text = "Stop Measurement"
             } else {
+
                 //   bluetoothBinder.stopSensor()
                 activate_mov_acc.isEnabled = false
                 activate_mov_acc.text = "Activate Movement Acceleration"
+                sharedPreferences.edit {
+                    putBoolean("SAMPLING_RUNNING", false)
+                }
             }
         }
     }
@@ -148,6 +156,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     }
 
     private fun showMovementValues(movementAcceleration: Double) {
+        Toast.makeText(this, "Movement $movementAcceleration", Toast.LENGTH_LONG).show()
         // write data to UI
     }
 
@@ -173,13 +182,18 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     override fun onServiceDisconnected(componentName: ComponentName) {
         if (::movementAccelerationDisposable.isInitialized)
             movementAccelerationDisposable.dispose()
+        if (::errorDisposable.isInitialized)
+            errorDisposable.dispose()
     }
 
     override fun onServiceConnected(componentName: ComponentName, binder: IBinder) {
         this.bluetoothBinder = binder as IBluetoothBinder
         movementAccelerationDisposable =
-            bluetoothBinder.getMovementObservable().subscribe(this::showMovementValues)
-        errorDisposable =
-            bluetoothBinder.getErrorObservable().subscribe(this::showError)
+            bluetoothBinder.getMovementObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::showMovementValues)
+        errorDisposable = bluetoothBinder.getErrorObservable()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(this::showError)
     }
 }
