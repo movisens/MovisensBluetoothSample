@@ -23,14 +23,15 @@ import java.util.concurrent.TimeUnit
  */
 
 class BluetoothService : Service() {
-    private var reconnectPendingIntent: PendingIntent? = null
-    private lateinit var errorDisposable: Disposable
     private lateinit var bluetoothServiceController: BluetoothServiceController
+    private lateinit var errorDisposable: Disposable
     private lateinit var movementAccelerationDisposable: Disposable
     private lateinit var sensorStopDisposable: Disposable
+
+    private lateinit var reconnectPendingIntent: PendingIntent
     private lateinit var alarmManager: AlarmManager
 
-    private val subject: Subject<Boolean> = PublishSubject.create()
+    private val reconnectSubject: Subject<Boolean> = PublishSubject.create()
     private val bluetoothBinder = BluetoothBinder()
 
     companion object {
@@ -61,8 +62,9 @@ class BluetoothService : Service() {
                         showForegroundNotification()
                         bluetoothServiceController =
                             BluetoothServiceController(MovisensDevicesRepository(RxBleClient.create(this)), mac)
-                        movementAccelerationDisposable = bluetoothServiceController.getMovementAccObservable(subject)
-                            .subscribe(::handleUpdates, { handleErrors(it, mac) })
+                        movementAccelerationDisposable =
+                            bluetoothServiceController.getMovementAccObservable(reconnectSubject)
+                                .subscribe(::handleUpdates, { handleErrors(it, mac) })
                         errorDisposable = bluetoothServiceController.errorSubject.subscribe { handleErrors(it, mac) }
                     }
                 }
@@ -75,7 +77,7 @@ class BluetoothService : Service() {
                     })
                 }
                 COMMAND_RECONNECT -> {
-                    subject.onNext(true)
+                    reconnectSubject.onNext(true)
                 }
             }
         } else
@@ -126,6 +128,13 @@ class BluetoothService : Service() {
     }
 
     override fun onDestroy() {
+        super.onDestroy()
+        if (::movementAccelerationDisposable.isInitialized) {
+            movementAccelerationDisposable.dispose()
+        }
+        if (::errorDisposable.isInitialized) {
+            errorDisposable.dispose()
+        }
         if (::sensorStopDisposable.isInitialized) {
             sensorStopDisposable.dispose()
         }

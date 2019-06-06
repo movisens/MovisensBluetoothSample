@@ -18,6 +18,7 @@ import com.movisens.rxblemovisenssample.R.layout
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND_START
+import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND_STOP
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.SENSOR_MAC
 import com.movisens.rxblemovisenssample.bluetooth.binder.IBluetoothBinder
 import com.movisens.rxblemovisenssample.ui.GenericDialogFragment
@@ -29,9 +30,10 @@ import kotlinx.android.synthetic.main.activity_connect.*
  * Created by Robert Zetzsche on 22.05.2019.
  */
 class ConnectActivity : AppCompatActivity(), ServiceConnection {
-    private lateinit var errorDisposable: Disposable
     private lateinit var bluetoothBinder: IBluetoothBinder
     private lateinit var connectViewModel: ConnectViewModel
+
+    private lateinit var errorDisposable: Disposable
     private lateinit var checkStateDisposable: Disposable
     private lateinit var movementAccelerationDisposable: Disposable
     private lateinit var deleteDisposable: Disposable
@@ -215,9 +217,9 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     }
 
     override fun onServiceDisconnected(componentName: ComponentName) {
-        if (::movementAccelerationDisposable.isInitialized)
+        if (::movementAccelerationDisposable.isInitialized && !movementAccelerationDisposable.isDisposed)
             movementAccelerationDisposable.dispose()
-        if (::errorDisposable.isInitialized)
+        if (::errorDisposable.isInitialized && !errorDisposable.isDisposed)
             errorDisposable.dispose()
     }
 
