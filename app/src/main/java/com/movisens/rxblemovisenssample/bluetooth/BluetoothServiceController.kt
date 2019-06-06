@@ -4,6 +4,7 @@ import com.movisens.rxblemovisenssample.exceptions.ReconnectException
 import com.movisens.rxblemovisenssample.exceptions.UnrecoverableException
 import com.movisens.rxblemovisenssample.model.MovisensDevicesRepository
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException
+import com.polidea.rxandroidble2.exceptions.BleGattException
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
@@ -22,7 +23,7 @@ class BluetoothServiceController(
             .map { it.movementAcceleration }
             .retryWhen {
                 it.flatMap { throwable: Throwable ->
-                    if (it is BleDisconnectedException) {
+                    if (it is BleDisconnectedException || it is BleGattException) {
                         errorSubject.onNext(ReconnectException())
                         return@flatMap observable
                     } else {
