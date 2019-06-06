@@ -35,7 +35,7 @@ class BluetoothServiceController(
     }
 
     fun stopSensor(): Observable<Boolean> {
-        return Observable.just(false)
+        return movisensDevicesRepository.stopSensor(mac)
     }
 
 }

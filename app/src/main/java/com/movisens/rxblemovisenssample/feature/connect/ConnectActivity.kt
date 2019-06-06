@@ -36,6 +36,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     private lateinit var movementAccelerationDisposable: Disposable
     private lateinit var deleteDisposable: Disposable
     private lateinit var stopAndDeleteDisposable: Disposable
+    private lateinit var stopDisposable: Disposable
 
     private lateinit var mac: String
     private lateinit var name: String
@@ -55,9 +56,9 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         sensor_mac.text = mac
     }
 
-    private fun startBluetoothServiceService() {
+    private fun startBluetoothServiceWithCommand(command: String) {
         val intent = Intent(this, BluetoothService::class.java)
-        intent.putExtra(COMMAND, COMMAND_START)
+        intent.putExtra(COMMAND, command)
         intent.putExtra(SENSOR_MAC, mac)
         if (SDK_INT > Build.VERSION_CODES.O) {
             startForegroundService(intent)
@@ -141,8 +142,14 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     private fun showError(throwable: Throwable) {
         throwable.printStackTrace()
         dismissWaitDialog()
-        checkStateDisposable.dispose()
         Snackbar.make(activity_connect_root, throwable.localizedMessage, Snackbar.LENGTH_LONG).show()
+
+        if (::checkStateDisposable.isInitialized && !checkStateDisposable.isDisposed)
+            checkStateDisposable.dispose()
+        if (::deleteDisposable.isInitialized && !deleteDisposable.isDisposed)
+            deleteDisposable.dispose()
+        if (::stopAndDeleteDisposable.isInitialized && !stopAndDeleteDisposable.isDisposed)
+            stopAndDeleteDisposable.dispose()
     }
 
     override fun onResume() {
@@ -174,12 +181,20 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
 
         activate_mov_acc.setOnClickListener {
             if (!sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
-                startBluetoothServiceService()
+                startBluetoothServiceWithCommand(COMMAND_START)
                 bindService(intent, this, Service.BIND_ABOVE_CLIENT)
                 setSamplingRunning(true)
                 value_text.visibility = VISIBLE
             } else {
-                //   bluetoothBinder.stopSensor()
+                startBluetoothServiceWithCommand(COMMAND_STOP)
+                stopDisposable = bluetoothBinder.sensorIsStoppedObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe {
+                        stopDisposable.dispose()
+                        val message = if (it) "Sensor was stopped successfully" else "Sensor stopping failed"
+                        Snackbar.make(activity_connect_root, message, Snackbar.LENGTH_LONG).show()
+                    }
+                //Write sampling running to false
                 value_text.visibility = INVISIBLE
                 activate_mov_acc.isEnabled = false
                 sharedPreferences.edit {

@@ -118,6 +118,13 @@ class MovisensDevicesRepository(val rxBleClient: RxBleClient) {
             .flatMap(::deleteDataWithConnection)
     }
 
+    fun stopSensor(mac: String): Observable<Boolean> {
+        return rxBleClient.getBleDevice(mac)
+            .establishConnection(false)
+            .flatMap(::stopMeasurement)
+            .map { !it.measurementEnabled }
+    }
+
     private fun isMovisensDevice(scanResult: ScanResult): Boolean {
         return scanResult.bleDevice.name != null
                 && scanResult.bleDevice.name!!.startsWith("MOVISENS")

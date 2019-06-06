@@ -27,6 +27,7 @@ class BluetoothService : Service() {
     private lateinit var errorDisposable: Disposable
     private lateinit var bluetoothServiceController: BluetoothServiceController
     private lateinit var movementAccelerationDisposable: Disposable
+    private lateinit var sensorStopDisposable: Disposable
     private lateinit var alarmManager: AlarmManager
 
     private val subject: Subject<Boolean> = PublishSubject.create()
@@ -66,7 +67,12 @@ class BluetoothService : Service() {
                     }
                 }
                 COMMAND_STOP -> {
-                    bluetoothServiceController.stopSensor().subscribe()
+                    sensorStopDisposable = bluetoothServiceController.stopSensor().subscribe({
+                        sensorStopDisposable.dispose()
+                        bluetoothBinder.pushSensorWasStopped(it)
+                    }, {
+                        bluetoothBinder.pushException(it)
+                    })
                 }
                 COMMAND_RECONNECT -> {
                     subject.onNext(true)
@@ -116,6 +122,12 @@ class BluetoothService : Service() {
             movementAccelerationDisposable.dispose()
             errorDisposable.dispose()
             bluetoothBinder.pushException(throwable)
+        }
+    }
+
+    override fun onDestroy() {
+        if (::sensorStopDisposable.isInitialized) {
+            sensorStopDisposable.dispose()
         }
     }
 }
