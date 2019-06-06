@@ -106,6 +106,8 @@ class BluetoothService : Service() {
             val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, pi)
             alarmManager.setAlarmClock(alarmClockInfo, reconnectPendingIntent)
         } else if (throwable is UnrecoverableException) {
+            movementAccelerationDisposable.dispose()
+            errorDisposable.dispose()
             bluetoothBinder.pushException(throwable)
             // Do something
         }

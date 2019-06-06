@@ -23,12 +23,12 @@ class BluetoothServiceController(
             .map { it.movementAcceleration }
             .retryWhen {
                 it.flatMap { throwable: Throwable ->
-                    if (it is BleDisconnectedException || it is BleGattException) {
+                    if (throwable is BleDisconnectedException || throwable is BleGattException) {
                         errorSubject.onNext(ReconnectException())
                         return@flatMap observable
                     } else {
                         errorSubject.onNext(UnrecoverableException())
-                        return@flatMap Observable.error<Throwable>(throwable)
+                        return@flatMap observable
                     }
                 }
             }
