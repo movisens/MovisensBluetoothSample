@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit
 
 class BluetoothService : Service() {
     private lateinit var bluetoothServiceController: BluetoothServiceController
+
     private lateinit var errorDisposable: Disposable
     private lateinit var movementAccelerationDisposable: Disposable
     private lateinit var sensorStopDisposable: Disposable
@@ -72,8 +73,10 @@ class BluetoothService : Service() {
                     sensorStopDisposable = bluetoothServiceController.stopSensor().subscribe({
                         sensorStopDisposable.dispose()
                         bluetoothBinder.pushSensorWasStopped(it)
+                        stopForeground(true)
                     }, {
                         bluetoothBinder.pushException(it)
+                        stopForeground(true)
                     })
                 }
                 COMMAND_RECONNECT -> {
