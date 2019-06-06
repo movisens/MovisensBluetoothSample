@@ -1,7 +1,10 @@
 package com.movisens.rxblemovisenssample.feature.connect
 
 import android.app.Service
-import android.content.*
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
@@ -95,7 +98,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         val dialog = AlertDialog.Builder(this)
             .setTitle("Delete data")
             .setMessage("There is currently a measurement on the sensor! Please delete the data!")
-            .setPositiveButton("ok") { dialogInterface, _ ->
+            .setPositiveButton("ok") { _, _ ->
                 showWaitDialog()
                 deleteDisposable = connectViewModel.deleteData(mac)
                     .subscribe({
@@ -118,7 +121,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         val dialog = AlertDialog.Builder(this)
             .setTitle("Stop measurement and delete data")
             .setMessage("There is currently a measurement running! Please stop this measurement and delete the data!")
-            .setPositiveButton("ok") { dialogInterface: DialogInterface?, i: Int ->
+            .setPositiveButton("ok") { _, _ ->
                 showWaitDialog()
                 stopAndDeleteDisposable = connectViewModel.stopMeasurementAndDeleteData(mac)
                     .subscribe({
