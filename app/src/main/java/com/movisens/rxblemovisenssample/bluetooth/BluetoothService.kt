@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.movisens.rxblemovisenssample.R
 import com.movisens.rxblemovisenssample.bluetooth.binder.BluetoothBinder
 import com.movisens.rxblemovisenssample.exceptions.ReconnectException
 import com.movisens.rxblemovisenssample.exceptions.UnrecoverableException
@@ -92,10 +93,11 @@ class BluetoothService : Service() {
             this, 0,
             Intent(this, ConnectActivity::class.java), FLAG_UPDATE_CURRENT
         )
-        return NotificationCompat.Builder(this, "test")
+        return NotificationCompat.Builder(applicationContext, "test")
             .setContentTitle("Sensor Connection Running")
             .setContentText(title)
             .setContentIntent(pendingIntent)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .build()
     }
 
