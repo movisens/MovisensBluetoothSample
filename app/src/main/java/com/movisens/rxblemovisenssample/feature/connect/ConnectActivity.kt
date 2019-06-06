@@ -27,12 +27,13 @@ import kotlinx.android.synthetic.main.activity_connect.*
  * Created by Robert Zetzsche on 22.05.2019.
  */
 class ConnectActivity : AppCompatActivity(), ServiceConnection {
+    private lateinit var errorDisposable: Disposable
+    private lateinit var bluetoothBinder: IBluetoothBinder
     private lateinit var connectViewModel: ConnectViewModel
     private lateinit var checkStateDisposable: Disposable
     private lateinit var movementAccelerationDisposable: Disposable
     private lateinit var deleteDisposable: Disposable
     private lateinit var stopAndDeleteDisposable: Disposable
-    private lateinit var binderI: IBluetoothBinder
 
     private lateinit var mac: String
     private lateinit var name: String
@@ -82,7 +83,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
                 }
                 activate_mov_acc.text = "Stop Measurement"
             } else {
-                binderI.stopSensor()
+                //   bluetoothBinder.stopSensor()
                 activate_mov_acc.isEnabled = false
                 activate_mov_acc.text = "Activate Movement Acceleration"
             }
@@ -175,9 +176,10 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     }
 
     override fun onServiceConnected(componentName: ComponentName, binder: IBinder) {
-        this.binderI = binder as IBluetoothBinder
-        movementAccelerationDisposable = binder.getMovementAccObservable()
-            .subscribe(this::showMovementValues, this::showError)
-
+        this.bluetoothBinder = binder as IBluetoothBinder
+        movementAccelerationDisposable =
+            bluetoothBinder.getMovementObservable().subscribe(this::showMovementValues)
+        errorDisposable =
+            bluetoothBinder.getErrorObservable().subscribe(this::showError)
     }
 }

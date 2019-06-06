@@ -1,6 +1,7 @@
 package com.movisens.rxblemovisenssample.bluetooth
 
 import com.movisens.rxblemovisenssample.exceptions.ReconnectException
+import com.movisens.rxblemovisenssample.exceptions.UnrecoverableException
 import com.movisens.rxblemovisenssample.model.MovisensDevicesRepository
 import com.polidea.rxandroidble2.exceptions.BleDisconnectedException
 import io.reactivex.Observable
@@ -25,6 +26,7 @@ class BluetoothServiceController(
                         errorSubject.onNext(ReconnectException())
                         return@flatMap observable
                     } else {
+                        errorSubject.onNext(UnrecoverableException())
                         return@flatMap Observable.error<Throwable>(throwable)
                     }
                 }

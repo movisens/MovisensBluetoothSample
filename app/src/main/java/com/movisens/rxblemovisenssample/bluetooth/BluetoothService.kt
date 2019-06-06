@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import com.movisens.rxblemovisenssample.bluetooth.binder.BluetoothBinder
-import com.movisens.rxblemovisenssample.bluetooth.binder.IBluetoothBinder
 import com.movisens.rxblemovisenssample.exceptions.ReconnectException
 import com.movisens.rxblemovisenssample.exceptions.UnrecoverableException
 import com.movisens.rxblemovisenssample.feature.connect.ConnectActivity
@@ -24,11 +23,11 @@ import java.util.concurrent.TimeUnit
 class BluetoothService : Service() {
     private var reconnectPendingIntent: PendingIntent? = null
     private lateinit var errorDisposable: Disposable
-    private lateinit var IBluetoothBinder: IBluetoothBinder
-    private lateinit var bluetoothController: BluetoothServiceController
+    private lateinit var bluetoothServiceController: BluetoothServiceController
     private lateinit var movementAccelerationDisposable: Disposable
     private val subject: Subject<Boolean> = PublishSubject.create()
     private val alarmManager: AlarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    private val bluetoothBinder = BluetoothBinder()
 
     companion object {
         const val COMMAND = "COMMAND"
@@ -36,12 +35,8 @@ class BluetoothService : Service() {
         const val SENSOR_MAC = "SENSOR_MAC"
     }
 
-    override fun onBind(p0: Intent?): IBinder {
-        return IBluetoothBinder
-    }
-
-    override fun onCreate() {
-        super.onCreate()
+    override fun onBind(p0: Intent?): IBinder? {
+        return bluetoothBinder
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -52,16 +47,15 @@ class BluetoothService : Service() {
                 "START_COMMAND" -> {
                     if (intent.hasExtra(SENSOR_MAC)) {
                         showForegroundNotification()
-                        bluetoothController =
+                        bluetoothServiceController =
                             BluetoothServiceController(MovisensDevicesRepository(RxBleClient.create(this)), mac)
-                        IBluetoothBinder = BluetoothBinder(bluetoothController)
-                        movementAccelerationDisposable = bluetoothController.getMovementAccObservable(subject)
-                            .subscribe()
-                        errorDisposable = bluetoothController.errorSubject.subscribe { handleErrors(it, mac) }
+                        movementAccelerationDisposable = bluetoothServiceController.getMovementAccObservable(subject)
+                            .subscribe(::handleUpdates, { handleErrors(it, mac) })
+                        errorDisposable = bluetoothServiceController.errorSubject.subscribe { handleErrors(it, mac) }
                     }
                 }
                 "STOP_COMMAND" -> {
-                    bluetoothController.stopSensor().subscribe()
+                    bluetoothServiceController.stopSensor().subscribe()
                 }
                 "RECONNECT" -> {
                     subject.onNext(true)
@@ -69,6 +63,11 @@ class BluetoothService : Service() {
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun handleUpdates(movementAccelerationBuffered: Double) {
+        //update notification
+        bluetoothBinder.pushMovementValue(movementAccelerationBuffered)
     }
 
     private fun showForegroundNotification() {
@@ -89,6 +88,7 @@ class BluetoothService : Service() {
             val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, pi)
             alarmManager.setAlarmClock(alarmClockInfo, reconnectPendingIntent)
         } else if (throwable is UnrecoverableException) {
+            bluetoothBinder.pushException(throwable)
             // Do something
         }
     }
