@@ -71,8 +71,10 @@ class BluetoothService : Service() {
     }
 
     private fun showForegroundNotification() {
-        val notification: Notification? = null
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification: Notification? = NotificationCompat.Builder(this, "test")
+            .setContentText("Sensor Connection Running")
+            .setContentTitle("Sensor Connection Running")
+            .build()
         startForeground(123, notification)
     }
 

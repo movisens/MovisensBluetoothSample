@@ -1,11 +1,13 @@
 package com.movisens.rxblemovisenssample.application
 
 import android.app.Application
-import android.content.Intent
-import android.os.Build
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.NotificationManager.IMPORTANCE_HIGH
+import android.content.Context
 import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.O
 import android.preference.PreferenceManager
-import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
 import com.polidea.rxandroidble2.exceptions.BleException
 import io.reactivex.exceptions.UndeliverableException
 import io.reactivex.plugins.RxJavaPlugins
@@ -35,6 +37,12 @@ class Application : Application() {
             } else {
                 startActivity(intent)
             }
+
+    private fun createNotificationChannel() {
+        if (SDK_INT >= O) {
+            val testChannel = NotificationChannel("test", "test", IMPORTANCE_HIGH)
+            (getSystemService(Context.NOTIFICATION_SERVICE)
+                    as NotificationManager).createNotificationChannel(testChannel)
         }
     }
 
