@@ -49,49 +49,10 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
-        mac = intent?.extras?.getString("MAC") ?: ""
-        name = intent?.extras?.getString("NAME") ?: ""
+        mac = intent?.extras?.getString(SENSOR_MAC) ?: sharedPreferences.getString(SENSOR_MAC, "") ?: ""
+        name = intent?.extras?.getString("SENSOR_NAME") ?: sharedPreferences.getString("SENSOR_NAME", "") ?: ""
         sensor_name.text = name
         sensor_mac.text = mac
-
-        check_sensor_state.setOnClickListener {
-            showWaitDialog()
-            checkStateDisposable = connectViewModel.getMovisensSensorState(mac)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    checkStateDisposable.dispose()
-                    dismissWaitDialog()
-                    if (!it.dataAvailable && !it.measurementEnabled) {
-                        activate_mov_acc.isEnabled = true
-                    } else {
-                        setSamplingRunning(false)
-                        refreshActivateMovementAccelerationButton(false)
-                        if (it.measurementEnabled && it.dataAvailable) {
-                            showStopMeasurementAndDeleteDataDialog()
-                        } else if (it.dataAvailable) {
-                            showDeleteDataDialog()
-                        }
-                    }
-                }, ::showError)
-        }
-
-        val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
-        refreshActivateMovementAccelerationButton(samplingRunning)
-        activate_mov_acc.setOnClickListener {
-            if (!sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
-                startBluetoothServiceService()
-                bindService(intent, this, Service.BIND_ABOVE_CLIENT)
-                setSamplingRunning(true)
-                value_text.visibility = VISIBLE
-            } else {
-                //   bluetoothBinder.stopSensor()
-                value_text.visibility = INVISIBLE
-                activate_mov_acc.isEnabled = false
-                sharedPreferences.edit {
-                    putBoolean("SAMPLING_RUNNING", false)
-                }
-            }
-        }
     }
 
     private fun startBluetoothServiceService() {
@@ -107,6 +68,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
 
     private fun refreshActivateMovementAccelerationButton(samplingRunning: Boolean) {
         activate_mov_acc.text = if (samplingRunning) "Stop Measurement" else "Activate Movement Acceleration"
+        activate_mov_acc.isEnabled = samplingRunning
     }
 
     private fun setSamplingRunning(isRunning: Boolean) {
@@ -188,6 +150,48 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         if (sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
             bindService(Intent(this, BluetoothService::class.java), this, Service.BIND_ADJUST_WITH_ACTIVITY)
         }
+
+        check_sensor_state.setOnClickListener {
+            showWaitDialog()
+            checkStateDisposable = connectViewModel.getMovisensSensorState(mac)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    checkStateDisposable.dispose()
+                    dismissWaitDialog()
+                    if (!it.dataAvailable && !it.measurementEnabled) {
+                        activate_mov_acc.isEnabled = true
+                    } else {
+                        setSamplingRunning(false)
+                        refreshActivateMovementAccelerationButton(false)
+                        if (it.measurementEnabled && it.dataAvailable) {
+                            showStopMeasurementAndDeleteDataDialog()
+                        } else if (it.dataAvailable) {
+                            showDeleteDataDialog()
+                        }
+                    }
+                }, ::showError)
+        }
+
+        activate_mov_acc.setOnClickListener {
+            if (!sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
+                startBluetoothServiceService()
+                bindService(intent, this, Service.BIND_ABOVE_CLIENT)
+                setSamplingRunning(true)
+                value_text.visibility = VISIBLE
+            } else {
+                //   bluetoothBinder.stopSensor()
+                value_text.visibility = INVISIBLE
+                activate_mov_acc.isEnabled = false
+                sharedPreferences.edit {
+                    putBoolean("SAMPLING_RUNNING", false)
+                }
+            }
+        }
+
+        val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
+        refreshActivateMovementAccelerationButton(samplingRunning)
+        check_sensor_state.isEnabled = !samplingRunning
+        value_text.visibility = if (samplingRunning) VISIBLE else INVISIBLE
     }
 
     override fun onPause() {
