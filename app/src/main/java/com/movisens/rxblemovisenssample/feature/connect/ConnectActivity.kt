@@ -7,7 +7,8 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.os.IBinder
 import android.preference.PreferenceManager
-import android.widget.Toast
+import android.view.View.INVISIBLE
+import android.view.View.VISIBLE
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
@@ -44,12 +45,15 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(layout.activity_connect)
+        connectViewModel = ViewModelProviders.of(this).get(ConnectViewModel::class.java)
+
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         mac = intent?.extras?.getString("MAC") ?: ""
         name = intent?.extras?.getString("NAME") ?: ""
+        sensor_name.text = name
+        sensor_mac.text = mac
 
-        connectViewModel = ViewModelProviders.of(this).get(ConnectViewModel::class.java)
         check_sensor_state.setOnClickListener {
             showWaitDialog()
             checkStateDisposable = connectViewModel.getMovisensSensorState(mac)
@@ -60,6 +64,8 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
                     if (!it.dataAvailable && !it.measurementEnabled) {
                         activate_mov_acc.isEnabled = true
                     } else {
+                        setSamplingRunning(false)
+                        refreshActivateMovementAccelerationButton(false)
                         if (it.measurementEnabled && it.dataAvailable) {
                             showStopMeasurementAndDeleteDataDialog()
                         } else if (it.dataAvailable) {
@@ -70,31 +76,42 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         }
 
         val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
-        activate_mov_acc.text = if (samplingRunning) "Stop Measurement" else "Activate Movement Acceleration"
+        refreshActivateMovementAccelerationButton(samplingRunning)
         activate_mov_acc.setOnClickListener {
             if (!sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
-                val intent = Intent(this, BluetoothService::class.java)
-                intent.putExtra(COMMAND, COMMAND_START)
-                intent.putExtra(SENSOR_MAC, mac)
-                if (SDK_INT > Build.VERSION_CODES.O) {
-                    startForegroundService(intent)
-                } else {
-                    startService(intent)
-                }
+                startBluetoothServiceService()
                 bindService(intent, this, Service.BIND_ABOVE_CLIENT)
-                sharedPreferences.edit {
-                    putBoolean("SAMPLING_RUNNING", true)
-                }
-                activate_mov_acc.text = "Stop Measurement"
+                setSamplingRunning(true)
+                value_text.visibility = VISIBLE
             } else {
-
                 //   bluetoothBinder.stopSensor()
+                value_text.visibility = INVISIBLE
                 activate_mov_acc.isEnabled = false
-                activate_mov_acc.text = "Activate Movement Acceleration"
                 sharedPreferences.edit {
                     putBoolean("SAMPLING_RUNNING", false)
                 }
             }
+        }
+    }
+
+    private fun startBluetoothServiceService() {
+        val intent = Intent(this, BluetoothService::class.java)
+        intent.putExtra(COMMAND, COMMAND_START)
+        intent.putExtra(SENSOR_MAC, mac)
+        if (SDK_INT > Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    }
+
+    private fun refreshActivateMovementAccelerationButton(samplingRunning: Boolean) {
+        activate_mov_acc.text = if (samplingRunning) "Stop Measurement" else "Activate Movement Acceleration"
+    }
+
+    private fun setSamplingRunning(isRunning: Boolean) {
+        sharedPreferences.edit {
+            putBoolean("SAMPLING_RUNNING", isRunning)
         }
     }
 
@@ -156,8 +173,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     }
 
     private fun showMovementValues(movementAcceleration: Double) {
-        Toast.makeText(this, "Movement $movementAcceleration", Toast.LENGTH_LONG).show()
-        // write data to UI
+        value_text.text = "Movement Acceleration: $movementAcceleration g"
     }
 
     private fun showError(throwable: Throwable) {
