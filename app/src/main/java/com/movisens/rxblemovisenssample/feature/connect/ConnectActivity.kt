@@ -182,7 +182,9 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         }
 
         activate_mov_acc.setOnClickListener {
-            if (!sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
+            val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
+            refreshActivateMovementAccelerationButton(samplingRunning)
+            if (!samplingRunning) {
                 startBluetoothServiceWithCommand(COMMAND_START)
                 bindService(intent, this, Service.BIND_ABOVE_CLIENT)
                 setSamplingRunning(true)

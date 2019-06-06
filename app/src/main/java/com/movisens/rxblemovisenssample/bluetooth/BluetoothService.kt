@@ -65,19 +65,22 @@ class BluetoothService : Service() {
                             BluetoothServiceController(MovisensDevicesRepository(RxBleClient.create(this)), mac)
                         movementAccelerationDisposable =
                             bluetoothServiceController.getMovementAccObservable(reconnectSubject)
-                                .subscribe(::handleUpdates, { handleErrors(it, mac) })
+                                .subscribe(::handleUpdates) { handleErrors(it, mac) }
                         errorDisposable = bluetoothServiceController.errorSubject.subscribe { handleErrors(it, mac) }
                     }
                 }
                 COMMAND_STOP -> {
-                    sensorStopDisposable = bluetoothServiceController.stopSensor().subscribe({
-                        sensorStopDisposable.dispose()
-                        bluetoothBinder.pushSensorWasStopped(it)
-                        stopForeground(true)
-                    }, {
-                        bluetoothBinder.pushException(it)
-                        stopForeground(true)
-                    })
+                    movementAccelerationDisposable.dispose()
+                    sensorStopDisposable = bluetoothServiceController.stopSensor()
+                        .delaySubscription(5, TimeUnit.SECONDS)
+                        .subscribe({
+                            sensorStopDisposable.dispose()
+                            bluetoothBinder.pushSensorWasStopped(it)
+                            stopForeground(true)
+                        }, {
+                            bluetoothBinder.pushException(it)
+                            stopForeground(true)
+                        })
                 }
                 COMMAND_RECONNECT -> {
                     reconnectSubject.onNext(true)
