@@ -29,7 +29,6 @@ class MovisensDevicesRepository(private val rxBleClient: RxBleClient) {
         )
             .filter { scanResult: ScanResult -> scanResult.rssi > MIN_RSSI }
             .filter { scanResult: ScanResult -> isMovisensDevice(scanResult) }
-            .filter { scanResult: ScanResult -> scanResult.bleDevice.name!!.contains("2695") }
     }
 
     fun <T> getMovisensSensorState(
