@@ -13,7 +13,7 @@ import com.polidea.rxandroidble2.scan.ScanSettings.SCAN_MODE_LOW_LATENCY
 import io.reactivex.Observable
 import io.reactivex.functions.BiFunction
 
-class MovisensDevicesRepository(val rxBleClient: RxBleClient) {
+class MovisensDevicesRepository(private val rxBleClient: RxBleClient) {
 
     companion object {
         const val MIN_RSSI = -90

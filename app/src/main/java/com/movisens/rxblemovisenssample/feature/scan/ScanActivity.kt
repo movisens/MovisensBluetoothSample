@@ -17,6 +17,7 @@ import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.BasePermissionListener
+import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.SENSOR_MAC
 import com.movisens.rxblemovisenssample.feature.connect.ConnectActivity
 import com.polidea.rxandroidble2.exceptions.BleScanException
 import com.polidea.rxandroidble2.exceptions.BleScanException.BLUETOOTH_DISABLED
@@ -27,11 +28,12 @@ import kotlinx.android.synthetic.main.activity_scan.*
 class ScanActivity : AppCompatActivity() {
     companion object {
         const val REQUEST_ENABLE_BT: Int = 1
+        const val SENSOR_NAME = "SENSOR_NAME"
     }
 
-    lateinit var scanViewModel: ScanViewModel
-    lateinit var scanDisposable: Disposable
-    lateinit var adapter: ScanRecyclerViewAdapter
+    private lateinit var scanViewModel: ScanViewModel
+    private lateinit var scanDisposable: Disposable
+    private lateinit var adapter: ScanRecyclerViewAdapter
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,11 +47,11 @@ class ScanActivity : AppCompatActivity() {
 
         if (!samplingIsRunning) {
             adapter = ScanRecyclerViewAdapter {
-                intent.putExtra("SENSOR_NAME", it.name)
-                intent.putExtra("SENSOR_MAC", it.mac)
+                intent.putExtra(SENSOR_NAME, it.name)
+                intent.putExtra(SENSOR_MAC, it.mac)
                 sharedPreferences.edit {
-                    putString("SENSOR_NAME", it.name)
-                    putString("SENSOR_MAC", it.mac)
+                    putString(SENSOR_NAME, it.name)
+                    putString(SENSOR_MAC, it.mac)
                 }
                 startActivity(intent)
                 finish()
@@ -90,6 +92,22 @@ class ScanActivity : AppCompatActivity() {
 
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (::scanDisposable.isInitialized)
+            scanDisposable.dispose()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
+            scanDisposable.dispose()
+            scanDisposable = scanViewModel.getMovisensDevices()
+                .subscribe(this@ScanActivity::showDevice, this@ScanActivity::showError)
+        }
+    }
+
+
     private fun showError(throwable: Throwable) {
         if (throwable is BleScanException) {
             // on first step ask for consent of the user to activate bluetooth.
@@ -109,20 +127,5 @@ class ScanActivity : AppCompatActivity() {
 
     private fun showDevice(device: ScanViewModel.MovisensDevice) {
         adapter.addDevice(device)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (::scanDisposable.isInitialized)
-            scanDisposable.dispose()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
-            scanDisposable.dispose()
-            scanDisposable = scanViewModel.getMovisensDevices()
-                .subscribe(this@ScanActivity::showDevice, this@ScanActivity::showError)
-        }
     }
 }
