@@ -53,6 +53,9 @@ dependencies {
 
     // test dependencies
     testImplementation("junit:junit:4.12")
+    testImplementation("com.polidea.rxandroidble2:mockclient:1.7.1")
+
     androidTestImplementation("androidx.test:runner:1.2.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.2.0")
+
 }
