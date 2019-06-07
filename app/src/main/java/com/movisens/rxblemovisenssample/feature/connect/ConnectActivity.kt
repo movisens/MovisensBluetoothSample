@@ -61,6 +61,94 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         sensor_mac.text = mac
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (isSamplingRunning()) {
+            bindService(Intent(this, BluetoothService::class.java), this, Service.BIND_ADJUST_WITH_ACTIVITY)
+        }
+
+        check_sensor_state.setOnClickListener {
+            showWaitDialog()
+            checkStateDisposable = connectViewModel.getMovisensSensorState(mac)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    checkStateDisposable.dispose()
+                    dismissWaitDialog()
+                    if (!it.dataAvailable && !it.measurementEnabled) {
+                        activate_mov_acc.isEnabled = true
+                    } else {
+                        setSamplingRunning(false)
+                        refreshActivateMovementAccelerationButton(false)
+                        if (it.measurementEnabled && it.dataAvailable) {
+                            showStopMeasurementAndDeleteDataDialog()
+                        } else if (it.dataAvailable) {
+                            showDeleteDataDialog()
+                        }
+                    }
+                }, ::showError)
+        }
+
+        activate_mov_acc.setOnClickListener {
+            val samplingRunning = isSamplingRunning()
+            refreshActivateMovementAccelerationButton(samplingRunning)
+            if (!samplingRunning) {
+                startBluetoothServiceWithCommand(COMMAND_START)
+                bindService(intent, this, Service.BIND_ABOVE_CLIENT)
+                setSamplingRunning(true)
+                value_text.visibility = VISIBLE
+            } else {
+                startBluetoothServiceWithCommand(COMMAND_STOP)
+                stopDisposable = bluetoothBinder.sensorIsStoppedObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe {
+                        stopDisposable.dispose()
+                        val message = if (it) "Sensor was stopped successfully" else "Sensor stopping failed"
+                        Snackbar.make(activity_connect_root, message, Snackbar.LENGTH_LONG).show()
+                    }
+                //Write sampling running to false
+                value_text.visibility = INVISIBLE
+                activate_mov_acc.isEnabled = false
+                sharedPreferences.edit {
+                    putBoolean("SAMPLING_RUNNING", false)
+                }
+            }
+        }
+
+        val samplingRunning = isSamplingRunning()
+        refreshActivateMovementAccelerationButton(samplingRunning)
+        check_sensor_state.isEnabled = !samplingRunning
+        value_text.visibility = if (samplingRunning) VISIBLE else INVISIBLE
+    }
+
+
+    override fun onPause() {
+        super.onPause()
+        if (isSamplingRunning())
+            unbindService(this)
+    }
+
+    override fun onServiceDisconnected(componentName: ComponentName) {
+        if (::movementAccelerationDisposable.isInitialized && !movementAccelerationDisposable.isDisposed)
+            movementAccelerationDisposable.dispose()
+        if (::errorDisposable.isInitialized && !errorDisposable.isDisposed)
+            errorDisposable.dispose()
+    }
+
+    override fun onServiceConnected(componentName: ComponentName, binder: IBinder) {
+        this.bluetoothBinder = binder as IBluetoothBinder
+        movementAccelerationDisposable =
+            bluetoothBinder.getMovementObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::showMovementValues)
+        errorDisposable = bluetoothBinder.getErrorObservable()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(this::showError)
+    }
+
+    private fun isSamplingRunning(): Boolean {
+        return sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
+    }
+
     private fun startBluetoothServiceWithCommand(command: String) {
         val intent = Intent(this, BluetoothService::class.java)
         intent.putExtra(COMMAND, command)
@@ -157,90 +245,4 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
             stopAndDeleteDisposable.dispose()
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (isSamplingRunning()) {
-            bindService(Intent(this, BluetoothService::class.java), this, Service.BIND_ADJUST_WITH_ACTIVITY)
-        }
-
-        check_sensor_state.setOnClickListener {
-            showWaitDialog()
-            checkStateDisposable = connectViewModel.getMovisensSensorState(mac)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    checkStateDisposable.dispose()
-                    dismissWaitDialog()
-                    if (!it.dataAvailable && !it.measurementEnabled) {
-                        activate_mov_acc.isEnabled = true
-                    } else {
-                        setSamplingRunning(false)
-                        refreshActivateMovementAccelerationButton(false)
-                        if (it.measurementEnabled && it.dataAvailable) {
-                            showStopMeasurementAndDeleteDataDialog()
-                        } else if (it.dataAvailable) {
-                            showDeleteDataDialog()
-                        }
-                    }
-                }, ::showError)
-        }
-
-        activate_mov_acc.setOnClickListener {
-            val samplingRunning = isSamplingRunning()
-            refreshActivateMovementAccelerationButton(samplingRunning)
-            if (!samplingRunning) {
-                startBluetoothServiceWithCommand(COMMAND_START)
-                bindService(intent, this, Service.BIND_ABOVE_CLIENT)
-                setSamplingRunning(true)
-                value_text.visibility = VISIBLE
-            } else {
-                startBluetoothServiceWithCommand(COMMAND_STOP)
-                stopDisposable = bluetoothBinder.sensorIsStoppedObservable()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe {
-                        stopDisposable.dispose()
-                        val message = if (it) "Sensor was stopped successfully" else "Sensor stopping failed"
-                        Snackbar.make(activity_connect_root, message, Snackbar.LENGTH_LONG).show()
-                    }
-                //Write sampling running to false
-                value_text.visibility = INVISIBLE
-                activate_mov_acc.isEnabled = false
-                sharedPreferences.edit {
-                    putBoolean("SAMPLING_RUNNING", false)
-                }
-            }
-        }
-
-        val samplingRunning = isSamplingRunning()
-        refreshActivateMovementAccelerationButton(samplingRunning)
-        check_sensor_state.isEnabled = !samplingRunning
-        value_text.visibility = if (samplingRunning) VISIBLE else INVISIBLE
-    }
-
-    private fun isSamplingRunning(): Boolean {
-        return sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (isSamplingRunning())
-            unbindService(this)
-    }
-
-    override fun onServiceDisconnected(componentName: ComponentName) {
-        if (::movementAccelerationDisposable.isInitialized && !movementAccelerationDisposable.isDisposed)
-            movementAccelerationDisposable.dispose()
-        if (::errorDisposable.isInitialized && !errorDisposable.isDisposed)
-            errorDisposable.dispose()
-    }
-
-    override fun onServiceConnected(componentName: ComponentName, binder: IBinder) {
-        this.bluetoothBinder = binder as IBluetoothBinder
-        movementAccelerationDisposable =
-            bluetoothBinder.getMovementObservable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::showMovementValues)
-        errorDisposable = bluetoothBinder.getErrorObservable()
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(this::showError)
-    }
 }
