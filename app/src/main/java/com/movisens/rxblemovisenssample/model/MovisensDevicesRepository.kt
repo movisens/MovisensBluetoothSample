@@ -1,8 +1,8 @@
 package com.movisens.rxblemovisenssample.model
 
-import android.app.Application
 import com.movisens.movisensgattlib.MovisensCharacteristics.*
 import com.movisens.movisensgattlib.attributes.*
+import com.movisens.rxblemovisenssample.exceptions.UnrecoverableException
 import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.RxBleConnection
 import com.polidea.rxandroidble2.scan.ScanFilter
@@ -13,14 +13,11 @@ import com.polidea.rxandroidble2.scan.ScanSettings.SCAN_MODE_LOW_LATENCY
 import io.reactivex.Observable
 import io.reactivex.functions.BiFunction
 
-class MovisensDevicesRepository(application: Application) {
+class MovisensDevicesRepository(val rxBleClient: RxBleClient) {
 
     companion object {
         const val MIN_RSSI = -90
     }
-
-    private val rxBleClient: RxBleClient = RxBleClient.create(application)
-
 
     fun getAllMovisensDevices(): Observable<ScanResult> {
         return rxBleClient.scanBleDevices(
@@ -42,25 +39,42 @@ class MovisensDevicesRepository(application: Application) {
         return rxBleClient.getBleDevice(mac)
             .establishConnection(false)
             .flatMap { connection ->
-                Observable.combineLatest(
-                    connection.readCharacteristic(DATA_AVAILABLE.uuid)
-                        .toObservable()
-                        .map { DataAvailable(it) },
-                    connection.readCharacteristic(MEASUREMENT_ENABLED.uuid)
-                        .toObservable()
-                        .map { MeasurementEnabled(it) },
-                    biFunction
-                )
+                combineSensorStateWithFunction(connection, biFunction)
             }
     }
 
-    fun startMeasurementAndActivateMovementAcceleration(mac: String): Observable<MovementAccelerationData> {
+    private fun <T> combineSensorStateWithFunction(
+        connection: RxBleConnection,
+        biFunction: BiFunction<DataAvailable, MeasurementEnabled, T>
+    ): Observable<T> {
+        return Observable.combineLatest(
+            connection.readCharacteristic(DATA_AVAILABLE.uuid)
+                .toObservable()
+                .map { DataAvailable(it) },
+            connection.readCharacteristic(MEASUREMENT_ENABLED.uuid)
+                .toObservable()
+                .map { MeasurementEnabled(it) },
+            biFunction
+        )
+    }
+
+    fun activateMovementAccelerationIfPossible(mac: String): Observable<MovementAccelerationData> {
         var connection: RxBleConnection? = null
         return rxBleClient.getBleDevice(mac)
             .establishConnection(false)
             .flatMap {
                 connection = it
-                it.writeCharacteristic(MEASUREMENT_ENABLED.uuid, MeasurementEnabled(true).bytes).toObservable()
+                combineSensorStateWithFunction(
+                    it,
+                    BiFunction<DataAvailable, MeasurementEnabled, Boolean> { t1, t2
+                        ->
+                        return@BiFunction t2.measurementEnabled || !t1.dataAvailable
+                    })
+            }
+            .doOnNext { if (!it) throw UnrecoverableException() }
+            .flatMap {
+                connection?.writeCharacteristic(MEASUREMENT_ENABLED.uuid, MeasurementEnabled(true).bytes)
+                    ?.toObservable()
             }
             .map { MeasurementEnabled(it).measurementEnabled }
             .filter { it }
@@ -102,6 +116,13 @@ class MovisensDevicesRepository(application: Application) {
         return rxBleClient.getBleDevice(mac)
             .establishConnection(false)
             .flatMap(::deleteDataWithConnection)
+    }
+
+    fun stopSensor(mac: String): Observable<Boolean> {
+        return rxBleClient.getBleDevice(mac)
+            .establishConnection(false)
+            .flatMap(::stopMeasurement)
+            .map { !it.measurementEnabled }
     }
 
     private fun isMovisensDevice(scanResult: ScanResult): Boolean {
