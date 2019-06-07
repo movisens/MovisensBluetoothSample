@@ -28,10 +28,10 @@ dependencies {
 
     implementation("androidx.appcompat:appcompat:${Versions.androidxVersion}")
     implementation("androidx.core:core-ktx:${Versions.androidxVersion}")
-    implementation("androidx.recyclerview:recyclerview:1.1.0-alpha05")
+    implementation("androidx.recyclerview:recyclerview:1.1.0-alpha06")
     implementation("androidx.constraintlayout:constraintlayout:1.1.3")
     implementation("androidx.cardview:cardview:1.0.0")
-    implementation("com.google.android.material:material:1.1.0-alpha06")
+    implementation("com.google.android.material:material:1.1.0-alpha07")
 
     // simplified android permissions
     implementation("com.karumi:dexter:5.0.0")
@@ -53,6 +53,6 @@ dependencies {
 
     // test dependencies
     testImplementation("junit:junit:4.12")
-    androidTestImplementation("androidx.test:runner:1.1.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.1.1")
+    androidTestImplementation("androidx.test:runner:1.2.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.2.0")
 }
