@@ -91,28 +91,24 @@ class BluetoothService : Service() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::movementAccelerationDisposable.isInitialized) {
+            movementAccelerationDisposable.dispose()
+        }
+        if (::errorDisposable.isInitialized) {
+            errorDisposable.dispose()
+        }
+        if (::sensorStopDisposable.isInitialized) {
+            sensorStopDisposable.dispose()
+        }
+    }
+
     private fun handleUpdates(movementAccelerationBuffered: Double) {
         bluetoothBinder.pushMovementValue(movementAccelerationBuffered)
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification: Notification = getNotification("Movement Acceleration: $movementAccelerationBuffered g")
         notificationManager.notify(123, notification)
-    }
-
-    private fun showForegroundNotification() {
-        startForeground(123, getNotification("Currently no data available"))
-    }
-
-    private fun getNotification(title: String): Notification {
-        val pendingIntent = getActivity(
-            this, 0,
-            Intent(this, ConnectActivity::class.java), FLAG_UPDATE_CURRENT
-        )
-        return NotificationCompat.Builder(applicationContext, "test")
-            .setContentTitle("Sensor Connection Running")
-            .setContentText(title)
-            .setContentIntent(pendingIntent)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .build()
     }
 
     private fun handleErrors(throwable: Throwable, mac: String) {
@@ -133,16 +129,21 @@ class BluetoothService : Service() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (::movementAccelerationDisposable.isInitialized) {
-            movementAccelerationDisposable.dispose()
-        }
-        if (::errorDisposable.isInitialized) {
-            errorDisposable.dispose()
-        }
-        if (::sensorStopDisposable.isInitialized) {
-            sensorStopDisposable.dispose()
-        }
+    private fun showForegroundNotification() {
+        startForeground(123, getNotification("Currently no data available"))
     }
+
+    private fun getNotification(title: String): Notification {
+        val pendingIntent = getActivity(
+            this, 0,
+            Intent(this, ConnectActivity::class.java), FLAG_UPDATE_CURRENT
+        )
+        return NotificationCompat.Builder(applicationContext, "test")
+            .setContentTitle("Sensor Connection Running")
+            .setContentText(title)
+            .setContentIntent(pendingIntent)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .build()
+    }
+
 }
