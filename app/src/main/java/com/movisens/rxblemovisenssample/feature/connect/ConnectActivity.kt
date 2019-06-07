@@ -159,7 +159,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
 
     override fun onResume() {
         super.onResume()
-        if (sharedPreferences.getBoolean("SAMPLING_RUNNING", false)) {
+        if (isSamplingRunning()) {
             bindService(Intent(this, BluetoothService::class.java), this, Service.BIND_ADJUST_WITH_ACTIVITY)
         }
 
@@ -185,7 +185,7 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
         }
 
         activate_mov_acc.setOnClickListener {
-            val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
+            val samplingRunning = isSamplingRunning()
             refreshActivateMovementAccelerationButton(samplingRunning)
             if (!samplingRunning) {
                 startBluetoothServiceWithCommand(COMMAND_START)
@@ -210,15 +210,20 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
             }
         }
 
-        val samplingRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
+        val samplingRunning = isSamplingRunning()
         refreshActivateMovementAccelerationButton(samplingRunning)
         check_sensor_state.isEnabled = !samplingRunning
         value_text.visibility = if (samplingRunning) VISIBLE else INVISIBLE
     }
 
+    private fun isSamplingRunning(): Boolean {
+        return sharedPreferences.getBoolean("SAMPLING_RUNNING", false)
+    }
+
     override fun onPause() {
         super.onPause()
-        unbindService(this)
+        if (isSamplingRunning())
+            unbindService(this)
     }
 
     override fun onServiceDisconnected(componentName: ComponentName) {
