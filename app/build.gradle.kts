@@ -20,6 +20,13 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.txt")
         }
     }
+
+    testOptions {
+        unitTests.apply {
+            isReturnDefaultValues = true
+        }
+    }
+
 }
 
 dependencies {
@@ -53,7 +60,9 @@ dependencies {
 
     // test dependencies
     testImplementation("junit:junit:4.12")
-    testImplementation("com.polidea.rxandroidble2:mockclient:1.7.1")
+    testImplementation("com.polidea.rxandroidble2:mockclient:1.10.0")
+    // must be used because of https://github.com/Polidea/RxAndroidBle/issues/262
+    testImplementation("org.robolectric:robolectric:4.2.1")
 
     androidTestImplementation("androidx.test:runner:1.2.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.2.0")

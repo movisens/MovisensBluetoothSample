@@ -7,12 +7,18 @@ import com.movisens.smartgattlib.helper.Characteristic
 import com.polidea.rxandroidble2.RxBleDevice
 import com.polidea.rxandroidble2.mockrxandroidble.RxBleClientMock
 import io.reactivex.Observable.just
-import java.util.HashSet
+import java.util.*
 
 class MockMovisensBleDeviceBuilder {
     private var measurementEnabled: Boolean = false
     private var dataAvailable: Boolean = false
+    private var macAddress: String = DEFAULT_MAC
+
     private val bufferedChars: MutableSet<Characteristic<*>>
+
+    companion object {
+        const val DEFAULT_MAC = "00:5a:23:14:a5:33"
+    }
 
     init {
         bufferedChars = HashSet()
@@ -20,13 +26,13 @@ class MockMovisensBleDeviceBuilder {
 
     fun build(): RxBleDevice {
         return RxBleClientMock.DeviceBuilder()
-            .deviceMacAddress("00:5a:23:14:a5:33")
+            .deviceMacAddress(macAddress)
             .deviceName("MOVISENS Sensor 2365")
             .scanRecord(ByteArray(0))
             .rssi(-40)
-            .notificationSource(DATA_AVAILABLE.getUuid(), just(getBooleanAsBytes(dataAvailable)))
+            .notificationSource(DATA_AVAILABLE.uuid, just(getBooleanAsBytes(dataAvailable)))
             .addService(
-                SENSOR_CONTROL.getUuid(),
+                SENSOR_CONTROL.uuid,
                 buildCharacteristics()
             )
             .build()
@@ -35,19 +41,19 @@ class MockMovisensBleDeviceBuilder {
     private fun buildCharacteristics(): List<BluetoothGattCharacteristic> {
         val characteristicsBuilder = RxBleClientMock.CharacteristicsBuilder()
             .addCharacteristic(
-                DATA_AVAILABLE.getUuid(),
+                DATA_AVAILABLE.uuid,
                 getBooleanAsBytes(dataAvailable),
                 RxBleClientMock.DescriptorsBuilder()
                     .build()
             )
             .addCharacteristic(
-                MEASUREMENT_ENABLED.getUuid(),
+                MEASUREMENT_ENABLED.uuid,
                 getBooleanAsBytes(measurementEnabled),
                 RxBleClientMock.DescriptorsBuilder()
                     .build()
             )
             .addCharacteristic(
-                DELETE_DATA.getUuid(),
+                DELETE_DATA.uuid,
                 getBooleanAsBytes(false),
                 RxBleClientMock.DescriptorsBuilder()
                     .build()
@@ -74,18 +80,23 @@ class MockMovisensBleDeviceBuilder {
         return this
     }
 
+    fun setMacAddress(macAddress: String): MockMovisensBleDeviceBuilder {
+        this.macAddress = macAddress
+        return this
+    }
+
     fun addCharacteristic(characteristic: Characteristic<*>): MockMovisensBleDeviceBuilder {
         this.bufferedChars.add(characteristic)
         return this
     }
 
-    fun getBooleanAsBytes(bool: Boolean): ByteArray {
+    private fun getBooleanAsBytes(bool: Boolean): ByteArray {
         val en = ByteBufferExt.allocate(1)
         en.putBoolean(bool)
         return en.array()
     }
 
-    fun getIntAsBytes(integer: Int): ByteArray {
+    private fun getIntAsBytes(integer: Int): ByteArray {
         val en = ByteBufferExt.allocate(4)
         en.putInt32(integer)
         return en.array()
