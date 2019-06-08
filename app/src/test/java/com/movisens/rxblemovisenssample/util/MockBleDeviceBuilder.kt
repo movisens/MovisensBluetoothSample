@@ -3,32 +3,39 @@ package com.movisens.rxblemovisenssample.util
 import android.bluetooth.BluetoothGattCharacteristic
 import com.movisens.movisensgattlib.MovisensCharacteristics.*
 import com.movisens.movisensgattlib.MovisensServices.SENSOR_CONTROL
-import com.movisens.smartgattlib.helper.Characteristic
 import com.polidea.rxandroidble2.RxBleDevice
 import com.polidea.rxandroidble2.mockrxandroidble.RxBleClientMock
+import io.reactivex.Observable
 import io.reactivex.Observable.just
 import java.util.*
+import kotlin.collections.HashMap
 
 class MockBleDeviceBuilder {
     private var measurementEnabled: Boolean = false
     private var dataAvailable: Boolean = false
     private var macAddress: String = DEFAULT_MAC
     private var name: String = DEFAULT_NAME
-
-
-    private val bufferedChars: MutableSet<Characteristic<*>>
+    private var notificationSources = HashMap<UUID, Observable<ByteArray>>()
 
     companion object {
         const val DEFAULT_MAC = "00:5a:23:14:a5:33"
         const val DEFAULT_NAME = "MOVISENS Sensor 2365"
-    }
 
-    init {
-        bufferedChars = HashSet()
+        fun getBooleanAsBytes(bool: Boolean): ByteArray {
+            val en = ByteBufferExt.allocate(1)
+            en.putBoolean(bool)
+            return en.array()
+        }
+
+        fun getIntAsBytes(integer: Int): ByteArray {
+            val en = ByteBufferExt.allocate(4)
+            en.putInt32(integer)
+            return en.array()
+        }
     }
 
     fun build(): RxBleDevice {
-        return RxBleClientMock.DeviceBuilder()
+        val builder = RxBleClientMock.DeviceBuilder()
             .deviceMacAddress(macAddress)
             .deviceName(name)
             .scanRecord(ByteArray(0))
@@ -38,7 +45,12 @@ class MockBleDeviceBuilder {
                 SENSOR_CONTROL.uuid,
                 buildCharacteristics()
             )
-            .build()
+
+        for (notificationSource in notificationSources) {
+            builder.notificationSource(notificationSource.key, notificationSource.value)
+        }
+
+        return builder.build();
     }
 
     private fun buildCharacteristics(): List<BluetoothGattCharacteristic> {
@@ -62,14 +74,14 @@ class MockBleDeviceBuilder {
                     .build()
             )
 
-        for (bufferedChar in bufferedChars) {
+        notificationSources.forEach {
             characteristicsBuilder.addCharacteristic(
-                bufferedChar.uuid,
+                it.key,
                 getIntAsBytes(0),
-                RxBleClientMock.DescriptorsBuilder()
-                    .build()
+                RxBleClientMock.DescriptorsBuilder().build()
             )
         }
+
         return characteristicsBuilder.build()
     }
 
@@ -93,20 +105,9 @@ class MockBleDeviceBuilder {
         return this
     }
 
-    fun addCharacteristic(characteristic: Characteristic<*>): MockBleDeviceBuilder {
-        this.bufferedChars.add(characteristic)
+    fun addNotificationSource(uuid: UUID, values: Observable<ByteArray>): MockBleDeviceBuilder {
+        notificationSources.put(uuid, values)
         return this
     }
 
-    private fun getBooleanAsBytes(bool: Boolean): ByteArray {
-        val en = ByteBufferExt.allocate(1)
-        en.putBoolean(bool)
-        return en.array()
-    }
-
-    private fun getIntAsBytes(integer: Int): ByteArray {
-        val en = ByteBufferExt.allocate(4)
-        en.putInt32(integer)
-        return en.array()
-    }
 }
