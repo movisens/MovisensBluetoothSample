@@ -9,15 +9,18 @@ import com.polidea.rxandroidble2.mockrxandroidble.RxBleClientMock
 import io.reactivex.Observable.just
 import java.util.*
 
-class MockMovisensBleDeviceBuilder {
+class MockBleDeviceBuilder {
     private var measurementEnabled: Boolean = false
     private var dataAvailable: Boolean = false
     private var macAddress: String = DEFAULT_MAC
+    private var name: String = DEFAULT_NAME
+
 
     private val bufferedChars: MutableSet<Characteristic<*>>
 
     companion object {
         const val DEFAULT_MAC = "00:5a:23:14:a5:33"
+        const val DEFAULT_NAME = "MOVISENS Sensor 2365"
     }
 
     init {
@@ -27,7 +30,7 @@ class MockMovisensBleDeviceBuilder {
     fun build(): RxBleDevice {
         return RxBleClientMock.DeviceBuilder()
             .deviceMacAddress(macAddress)
-            .deviceName("MOVISENS Sensor 2365")
+            .deviceName(name)
             .scanRecord(ByteArray(0))
             .rssi(-40)
             .notificationSource(DATA_AVAILABLE.uuid, just(getBooleanAsBytes(dataAvailable)))
@@ -70,22 +73,27 @@ class MockMovisensBleDeviceBuilder {
         return characteristicsBuilder.build()
     }
 
-    fun setMeasurementEnabled(measurementEnabled: Boolean): MockMovisensBleDeviceBuilder {
+    fun setMeasurementEnabled(measurementEnabled: Boolean): MockBleDeviceBuilder {
         this.measurementEnabled = measurementEnabled
         return this
     }
 
-    fun setDataAvailable(dataAvailable: Boolean): MockMovisensBleDeviceBuilder {
+    fun setDataAvailable(dataAvailable: Boolean): MockBleDeviceBuilder {
         this.dataAvailable = dataAvailable
         return this
     }
 
-    fun setMacAddress(macAddress: String): MockMovisensBleDeviceBuilder {
+    fun setMacAddress(macAddress: String): MockBleDeviceBuilder {
         this.macAddress = macAddress
         return this
     }
 
-    fun addCharacteristic(characteristic: Characteristic<*>): MockMovisensBleDeviceBuilder {
+    fun setName(name: String): MockBleDeviceBuilder {
+        this.name = name
+        return this
+    }
+
+    fun addCharacteristic(characteristic: Characteristic<*>): MockBleDeviceBuilder {
         this.bufferedChars.add(characteristic)
         return this
     }
