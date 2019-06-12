@@ -15,7 +15,6 @@ import android.view.View.VISIBLE
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
-import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.snackbar.Snackbar
 import com.movisens.rxblemovisenssample.R.layout
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
@@ -28,13 +27,14 @@ import com.movisens.rxblemovisenssample.ui.GenericDialogFragment
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_connect.*
+import org.koin.android.viewmodel.ext.android.viewModel
 
 /**
  * Created by Robert Zetzsche on 22.05.2019.
  */
 class ConnectActivity : AppCompatActivity(), ServiceConnection {
     private lateinit var bluetoothBinder: IBluetoothBinder
-    private lateinit var connectViewModel: ConnectViewModel
+    private val connectViewModel: ConnectViewModel by viewModel()
 
     private lateinit var errorDisposable: Disposable
     private lateinit var checkStateDisposable: Disposable
@@ -51,7 +51,6 @@ class ConnectActivity : AppCompatActivity(), ServiceConnection {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(layout.activity_connect)
-        connectViewModel = ViewModelProviders.of(this).get(ConnectViewModel::class.java)
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 

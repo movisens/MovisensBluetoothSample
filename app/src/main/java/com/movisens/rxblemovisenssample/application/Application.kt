@@ -14,6 +14,7 @@ import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND_START
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.SENSOR_MAC
+import com.movisens.rxblemovisenssample.feature.connect.ConnectViewModel
 import com.movisens.rxblemovisenssample.feature.scan.ScanViewModel
 import com.movisens.rxblemovisenssample.model.MovisensDevicesRepository
 import com.polidea.rxandroidble2.RxBleClient
@@ -69,7 +70,7 @@ class Application : Application() {
         startKoin {
             androidLogger()
             androidContext(this@Application)
-            modules(appModule)
+            modules(listOf(scanDevicesModule))
         }
     }
 
@@ -87,11 +88,12 @@ class Application : Application() {
     }
 
 
-    val appModule = module {
+    private val scanDevicesModule = module {
         // single instance of HelloRepository
         single { MovisensDevicesRepository(RxBleClient.create(this@Application)) }
         // MyViewModel ViewModel
         viewModel { ScanViewModel(get()) }
+        viewModel { ConnectViewModel(get()) }
     }
 }
 

@@ -1,9 +1,7 @@
 package com.movisens.rxblemovisenssample.feature.connect
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import com.movisens.rxblemovisenssample.model.MovisensDevicesRepository
-import com.polidea.rxandroidble2.RxBleClient
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.BiFunction
@@ -12,8 +10,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by Robert Zetzsche on 22.05.2019.
  */
-class ConnectViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = MovisensDevicesRepository(RxBleClient.create(application))
+class ConnectViewModel(private val repository: MovisensDevicesRepository) : ViewModel() {
 
     data class StartBluetoothConnectionModel(val dataAvailable: Boolean, val measurementEnabled: Boolean)
 
