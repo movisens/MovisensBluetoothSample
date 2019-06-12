@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
-import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.karumi.dexter.Dexter
@@ -23,6 +22,7 @@ import com.polidea.rxandroidble2.exceptions.BleScanException
 import com.polidea.rxandroidble2.exceptions.BleScanException.BLUETOOTH_DISABLED
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_scan.*
+import org.koin.android.viewmodel.ext.android.viewModel
 
 
 class ScanActivity : AppCompatActivity() {
@@ -31,7 +31,8 @@ class ScanActivity : AppCompatActivity() {
         const val SENSOR_NAME = "SENSOR_NAME"
     }
 
-    private lateinit var scanViewModel: ScanViewModel
+    // Lazy Inject ViewModel
+    val scanViewModel: ScanViewModel by viewModel()
     private lateinit var scanDisposable: Disposable
     private lateinit var adapter: ScanRecyclerViewAdapter
 
@@ -39,7 +40,6 @@ class ScanActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(com.movisens.rxblemovisenssample.R.layout.activity_scan)
-        scanViewModel = ViewModelProviders.of(this).get(ScanViewModel::class.java)
 
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         val samplingIsRunning = sharedPreferences.getBoolean("SAMPLING_RUNNING", false)

@@ -1,16 +1,13 @@
 package com.movisens.rxblemovisenssample.feature.scan
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import com.movisens.rxblemovisenssample.model.MovisensDevicesRepository
-import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.scan.ScanResult
 import io.reactivex.Observable
 
-class ScanViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = MovisensDevicesRepository(RxBleClient.create(application))
+open class ScanViewModel(private val repository: MovisensDevicesRepository) : ViewModel() {
 
-    fun getMovisensDevices(): Observable<MovisensDevice> {
+    open fun getMovisensDevices(): Observable<MovisensDevice> {
         return repository.getAllMovisensDevices()
             .map { scanResult: ScanResult ->
                 MovisensDevice(

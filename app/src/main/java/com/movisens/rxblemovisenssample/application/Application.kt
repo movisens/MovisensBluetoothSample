@@ -14,9 +14,17 @@ import com.movisens.rxblemovisenssample.bluetooth.BluetoothService
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.COMMAND_START
 import com.movisens.rxblemovisenssample.bluetooth.BluetoothService.Companion.SENSOR_MAC
+import com.movisens.rxblemovisenssample.feature.scan.ScanViewModel
+import com.movisens.rxblemovisenssample.model.MovisensDevicesRepository
+import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.exceptions.BleException
 import io.reactivex.exceptions.UndeliverableException
 import io.reactivex.plugins.RxJavaPlugins
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.android.viewmodel.dsl.viewModel
+import org.koin.core.context.startKoin
+import org.koin.dsl.module
 
 /**
  * Created by Robert Zetzsche on 27.05.2019.
@@ -57,6 +65,12 @@ class Application : Application() {
         }
 
         createNotificationChannel()
+
+        startKoin {
+            androidLogger()
+            androidContext(this@Application)
+            modules(appModule)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -71,4 +85,14 @@ class Application : Application() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
         return preference.getBoolean("SAMPLING_RUNNING", false)
     }
+
+
+    val appModule = module {
+        // single instance of HelloRepository
+        single { MovisensDevicesRepository(RxBleClient.create(this@Application)) }
+        // MyViewModel ViewModel
+        viewModel { ScanViewModel(get()) }
+    }
 }
+
+

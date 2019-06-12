@@ -40,6 +40,8 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("com.google.android.material:material:1.1.0-alpha07")
 
+    implementation("org.koin:koin-android-viewmodel:2.0.1")
+
     // simplified android permissions
     implementation("com.karumi:dexter:5.0.0")
 
@@ -65,6 +67,8 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.2.1")
 
     androidTestImplementation("androidx.test:runner:1.2.0")
+    androidTestImplementation("androidx.test:rules:1.2.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.2.0")
-
+    androidTestImplementation("org.koin:koin-test:2.0.1") { exclude("org.mockito", "mockito-inline") }
+    androidTestImplementation("org.mockito:mockito-android:2.24.5")
 }
