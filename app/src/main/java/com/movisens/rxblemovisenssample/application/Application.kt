@@ -25,6 +25,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.android.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 
 /**
@@ -94,6 +95,11 @@ class Application : Application() {
         // MyViewModel ViewModel
         viewModel { ScanViewModel(get()) }
         viewModel { ConnectViewModel(get()) }
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        stopKoin()
     }
 }
 

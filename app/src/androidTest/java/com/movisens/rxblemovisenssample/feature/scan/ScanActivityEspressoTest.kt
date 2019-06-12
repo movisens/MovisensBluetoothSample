@@ -11,13 +11,11 @@ import androidx.test.rule.ActivityTestRule
 import com.movisens.rxblemovisenssample.R
 import io.reactivex.Observable
 import org.hamcrest.CoreMatchers.`is`
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.koin.android.viewmodel.dsl.viewModel
 import org.koin.core.context.loadKoinModules
-import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
@@ -39,7 +37,6 @@ class ScanActivityEspressoTest {
         scanViewModel = mock(ScanViewModel::class.java)
         doReturn(Observable.just(ScanViewModel.MovisensDevice("Movisens 0654", "00:5a:23:14:a5:33", 0)))
             .`when`(scanViewModel).getMovisensDevices()
-
 
         loadKoinModules(module {
             viewModel(override = true) {
@@ -67,10 +64,4 @@ class ScanActivityEspressoTest {
         onView(withId(R.id.sensor_name)).check(matches(withText("Movisens 0654")))
         onView(withId(R.id.sensor_mac)).check(matches(withText("00:5a:23:14:a5:33")))
     }
-
-    @After
-    fun cleanUp() {
-        stopKoin()
-    }
-
 }
