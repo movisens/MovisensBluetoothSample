@@ -24,6 +24,7 @@ android {
     testOptions {
         unitTests.apply {
             isReturnDefaultValues = true
+            setIncludeAndroidResources(true)
         }
     }
 
@@ -64,7 +65,8 @@ dependencies {
     testImplementation("junit:junit:4.12")
     testImplementation("com.polidea.rxandroidble2:mockclient:1.10.0")
     // must be used because of https://github.com/Polidea/RxAndroidBle/issues/262
-    testImplementation("org.robolectric:robolectric:4.2.1")
+    testImplementation("org.robolectric:robolectric:4.3")
+    testImplementation("org.mockito:mockito-core:2.24.5")
 
     androidTestImplementation("androidx.test:runner:1.2.0")
     androidTestImplementation("androidx.test:rules:1.2.0")
