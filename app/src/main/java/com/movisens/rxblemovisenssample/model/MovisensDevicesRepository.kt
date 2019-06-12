@@ -1,7 +1,14 @@
 package com.movisens.rxblemovisenssample.model
 
-import com.movisens.movisensgattlib.MovisensCharacteristics.*
-import com.movisens.movisensgattlib.attributes.*
+import com.movisens.movisensgattlib.MovisensCharacteristics.DATA_AVAILABLE
+import com.movisens.movisensgattlib.MovisensCharacteristics.DELETE_DATA
+import com.movisens.movisensgattlib.MovisensCharacteristics.MEASUREMENT_ENABLED
+import com.movisens.movisensgattlib.MovisensCharacteristics.MOVEMENT_ACCELERATION_BUFFERED
+import com.movisens.movisensgattlib.attributes.DataAvailable
+import com.movisens.movisensgattlib.attributes.DeleteData
+import com.movisens.movisensgattlib.attributes.MeasurementEnabled
+import com.movisens.movisensgattlib.attributes.MovementAccelerationBuffered
+import com.movisens.movisensgattlib.attributes.MovementAccelerationData
 import com.movisens.rxblemovisenssample.exceptions.UnrecoverableException
 import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.RxBleConnection
@@ -33,18 +40,18 @@ class MovisensDevicesRepository(private val rxBleClient: RxBleClient) {
 
     fun <T> getMovisensSensorState(
         mac: String,
-        biFunction: BiFunction<DataAvailable, MeasurementEnabled, T>
+        combinerFunction: BiFunction<DataAvailable, MeasurementEnabled, T>
     ): Observable<T> {
         return rxBleClient.getBleDevice(mac)
             .establishConnection(false)
             .flatMap { connection ->
-                combineSensorStateWithFunction(connection, biFunction)
+                combineSensorStateWithFunction(connection, combinerFunction)
             }
     }
 
     private fun <T> combineSensorStateWithFunction(
         connection: RxBleConnection,
-        biFunction: BiFunction<DataAvailable, MeasurementEnabled, T>
+        combinerFunction: BiFunction<DataAvailable, MeasurementEnabled, T>
     ): Observable<T> {
         return Observable.combineLatest(
             connection.readCharacteristic(DATA_AVAILABLE.uuid)
@@ -53,7 +60,7 @@ class MovisensDevicesRepository(private val rxBleClient: RxBleClient) {
             connection.readCharacteristic(MEASUREMENT_ENABLED.uuid)
                 .toObservable()
                 .map { MeasurementEnabled(it) },
-            biFunction
+            combinerFunction
         )
     }
 
