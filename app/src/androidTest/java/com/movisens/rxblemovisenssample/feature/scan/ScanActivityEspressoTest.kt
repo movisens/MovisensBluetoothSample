@@ -26,7 +26,7 @@ import org.mockito.Mockito.verify
 /**
  * Created by Robert Zetzsche on 11.06.2019.
  */
-class ScanActivityTest {
+class ScanActivityEspressoTest {
 
     @Rule
     @JvmField
