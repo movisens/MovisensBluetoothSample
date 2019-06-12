@@ -32,7 +32,7 @@ class ScanActivity : AppCompatActivity() {
     }
 
     // Lazy Inject ViewModel
-    val scanViewModel: ScanViewModel by viewModel()
+    private val scanViewModel: ScanViewModel by viewModel()
     private lateinit var scanDisposable: Disposable
     private lateinit var adapter: ScanRecyclerViewAdapter
 

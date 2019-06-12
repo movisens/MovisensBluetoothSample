@@ -10,11 +10,11 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by Robert Zetzsche on 22.05.2019.
  */
-class ConnectViewModel(private val repository: MovisensDevicesRepository) : ViewModel() {
+open class ConnectViewModel(private val repository: MovisensDevicesRepository) : ViewModel() {
 
     data class StartBluetoothConnectionModel(val dataAvailable: Boolean, val measurementEnabled: Boolean)
 
-    fun getMovisensSensorState(mac: String): Observable<StartBluetoothConnectionModel> {
+    open fun getMovisensSensorState(mac: String): Observable<StartBluetoothConnectionModel> {
         return repository.getMovisensSensorState(
             mac,
             BiFunction { dataAvailable, measurementAvailable ->
@@ -25,19 +25,15 @@ class ConnectViewModel(private val repository: MovisensDevicesRepository) : View
             })
     }
 
-    fun stopMeasurementAndDeleteData(mac: String): Observable<Boolean> {
+    open fun stopMeasurementAndDeleteData(mac: String): Observable<Boolean> {
         return repository.stopMeasurementAndDeleteData(mac)
             .observeOn(AndroidSchedulers.mainThread())
             .delaySubscription(5, TimeUnit.SECONDS)
     }
 
-    fun deleteData(mac: String): Observable<Boolean> {
+    open fun deleteData(mac: String): Observable<Boolean> {
         return repository.deleteData(mac)
             .observeOn(AndroidSchedulers.mainThread())
             .delaySubscription(5, TimeUnit.SECONDS)
-    }
-
-    fun startMeasurementAndActivateMovementAcceleration(mac: String): Observable<Double> {
-        return repository.activateMovementAccelerationIfPossible(mac).map { it.movementAcceleration }
     }
 }
