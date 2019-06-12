@@ -41,8 +41,6 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("com.google.android.material:material:1.1.0-alpha07")
 
-    implementation("org.koin:koin-android-viewmodel:2.0.1")
-
     // simplified android permissions
     implementation("com.karumi:dexter:5.0.0")
 
@@ -61,6 +59,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-extensions:2.0.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.0.0")
 
+    //DI dependencies to get view models testable
+    implementation("org.koin:koin-android-viewmodel:2.0.1")
+
     // test dependencies
     testImplementation("junit:junit:4.12")
     testImplementation("com.polidea.rxandroidble2:mockclient:1.10.0")
@@ -71,6 +72,5 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.2.0")
     androidTestImplementation("androidx.test:rules:1.2.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.2.0")
-    androidTestImplementation("org.koin:koin-test:2.0.1") { exclude("org.mockito", "mockito-inline") }
     androidTestImplementation("org.mockito:mockito-android:2.24.5")
 }
