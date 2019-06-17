@@ -1,16 +1,16 @@
 # Movisens Bluetooth Example Project
 
-The following project is made to showcase the connection between a smartphone and a movisens sensors via Bluetooth. It implements the dataflows to connect to a movisens sensor and stay connected over a long time even with dropouts.
+The following showcases the connection between a smartphone and movisens physiological sensors via Bluetooth. It implements the data flows connecting to a movisens sensor and remains connected over a long time even accounting for dropouts.
 
-The project contains a way to find movisens sensors nearby and to connect to them. It uses the in chapter [Connection data flows](#dataflows) described data flows.
+The project contains a way to find movisens sensors nearby and to connect to them. It uses the data flows described in the chapter [Connection data flows](#dataflows).
 
-A Android foreground service will run the sensing in the background and is capable to reconnect, when a sensor will disconnect. In order to get a safe reconnect we have to implement the reconnect logic via a [setAlarmClock](https://developer.android.com/reference/android/app/AlarmManager#setAlarmClock(android.app.AlarmManager.AlarmClockInfo,%2520android.app.PendingIntent)) mechanism. This is necessary to get a reconnect in time even when the smartphone has a newer Android with version 7 or higher and uses doze mode. 
+An Android foreground service runs the sensing in the background and reconnects when a sensor disconnects. In order to safely reconnect we implement the reconnect logic via a [setAlarmClock](https://developer.android.com/reference/android/app/AlarmManager#setAlarmClock(android.app.AlarmManager.AlarmClockInfo,%2520android.app.PendingIntent))  mechanism. This allows a prompt reconnect even when the smartphone operates on a newer Android phone with version 7 or higher and uses doze mode.
 
-To read more about doze mode restrictions see [here](https://developer.android.com/training/monitoring-device-state/doze-standby).
+Read more about doze mode restrictions [here](https://developer.android.com/training/monitoring-device-state/doze-standby).
 
 ## How to connect to a movisens sensor
 
-This chapter will describe which requirements you have to meet and which data flows are necessary to follow in order to connect to a movisens sensor and hold your connection without issues.
+This chapter describes the necessary requirements and which data flows to follow in order to connect to a movisens sensor and hold your connection without issues.
 
 ### Prerequisites
 - movisens ECG, EDA or Move sensor
@@ -19,19 +19,19 @@ This chapter will describe which requirements you have to meet and which data fl
 
 ### Connection data flows <a name="dataflows"></a>
 
-Because of the high optimization of our sensors for mobile research there are a few data flows you have to implement in order to get a stable, non-faulty connection with no data loss.
+The optimisation of our sensors for mobile research requires you to implement a few data flows in order to get a stable, non-faulty connection with no data loss.
 
 #### First connection
 
 ![alt text](https://docs.movisens.com/bluetooth-example/firstStart.png "First Connection Graph")
 
- >**WARNING**: Be careful when delete all data. If the data wasn't downloaded via the [SensorManager](https://www.movisens.com/en/sensormanager/), it results in unrecoverable data loss. You should never continue a measurement which is currently running via a fresh first start. If you activate different characteristics via indication than before, you won't receive any data.
+ >**WARNING**: Be careful when deleting all data! If the data wasn't downloaded via the [SensorManager](https://www.movisens.com/en/sensormanager/), you permanently lose the recorded data. Never continue a measurement which is currently running via a fresh first start. If you activate different characteristics via indication than before, the sensor won’t transmit any data.
 
 #### Restart connection (After an app or smartphone restart)
 
 ![alt text](https://docs.movisens.com/bluetooth-example/Restart.png "First Connection Graph")
 
- >**WARNING**: Be careful to never restart a connection after measurement enabled returns **false** and data is available returns **true**. It will never return data anymore.
+ >**WARNING**: Be careful to never restart a connection after measurement enabled returns **false** and data is available returns  **true**. If this occurs, the sensor ceases data transmission.
 
 ## Used Technology 
 
